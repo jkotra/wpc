@@ -1,0 +1,53 @@
+name: WallE
+version: "0.1.0"
+author: Jagadeesh K. <jagadeesh@stdin.top>
+about: Hmm.
+args:
+    - directory:
+        short: d
+        long: directory
+        help: directory of wallpapers.
+        required: true
+        takes_value: true
+
+    - local:
+          short: l
+          long: local
+          help: Offline Mode.
+          takes_value: false
+
+    - bing:
+          short: b
+          long: bing
+          help: Bing Wallpaper of the Day.
+          takes_value: false
+
+    - wallheaven_id:
+          long: wallheaven_id
+          help: Collection ID.
+          takes_value: true
+
+    - wallheaven_username:
+        long: wallheaven_username
+        help: Wallheaven username.
+        takes_value: true
+
+    - interval:
+          short: i
+          long: interval
+          help: interval in Secs.
+          required: true
+          takes_value: true
+
+    - update:
+          short: u
+          long: update
+          help: Update interval in Secs.
+          required: true
+          takes_value: true
+
+    - debug:
+          short: D
+          long: debug
+          help: show debug messages.
+          takes_value: false
