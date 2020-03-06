@@ -1,7 +1,7 @@
-name: WallE
+name: WPC
 version: "0.1.0"
 author: Jagadeesh K. <jagadeesh@stdin.top>
-about: Hmm.
+about: Wall Paper Changer
 args:
     - directory:
         short: d
