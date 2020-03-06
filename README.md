@@ -37,7 +37,7 @@ OPTIONS:
 
 Complete [wallheaven API](https://wallhaven.cc/help/api) is implemented in [api/wallheaven.rs](https://github.com/jkotra/wpc/blob/master/src/api/wallheaven.rs)
 
-Feel free to use it any of your projects.
+Feel free to use it in any of your projects.
 
 # Building  
   
