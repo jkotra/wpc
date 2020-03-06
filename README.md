@@ -4,7 +4,7 @@
 
 WPC stands for **W**all **P**aper **C**hanger  
   
-WPC is a wallpaper for Windows/Linux. It can retrieve wallpapers from [wallheaven](https://wallhaven.cc/) and [Bing](https://www.bing.com/) *optionally*.  
+WPC is a wallpaper changer for Windows/Linux. It can retrieve wallpapers from [wallheaven](https://wallhaven.cc/) and [Bing](https://www.bing.com/) *optionally*.  
   
 # Usage  
   
@@ -47,4 +47,4 @@ Feel free to use it in any of your projects.
   
 `cargo build --release`  
   
-Binary is located at `target/release/wpc.exe`
+Binary is located at `target/release/`
