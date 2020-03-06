@@ -1071,12 +1071,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "whoami"
-version = "0.8.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a08eb844b158ea881e81b94556eede7f7e306e4c7b976aad88f49e6e36dec391"
-
-[[package]]
 name = "winapi"
 version = "0.2.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1130,7 +1124,6 @@ dependencies = [
  "reqwest",
  "serde",
  "serde_json",
- "whoami",
  "winapi 0.3.8",
 ]
 

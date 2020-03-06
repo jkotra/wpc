@@ -6,6 +6,10 @@ use crate::misc::{update_file_list, print_debug_msg};
 
 #[path = "api/wallheaven.rs"] mod wallheaven;
 #[path = "api/bing.rs"] mod bing;
+
+#[cfg(target_os = "windows")]
+#[path = "api/windows.rs"] mod windows;
+
 mod misc;
 mod change;
 
@@ -15,8 +19,9 @@ fn main() {
     let debug = matches.occurrences_of("debug") != 0;
     let mut time = std::time::Instant::now();
 
-    let mut wallpaper_manifest: Vec<String> = vec![];
-    let mut file_manifest: Vec<String> = vec![];
+    // let mut wallpaper_manifest: Vec<String> = vec![];
+    //let mut file_manifest: Vec<String> = vec![];
+
     let savepath = matches.value_of("directory").unwrap();
 
     // check flags
@@ -25,9 +30,14 @@ fn main() {
     let wallheaven_flag = matches.is_present("wallheaven_id") &&
         matches.is_present("wallheaven_username");
 
+    if !matches.is_present("wallheaven_id") ||
+        !matches.is_present("wallheaven_username") {
+        panic!("both wallheaven_id and wallheaven_username must be provided!")
+    }
+
     let local_flag = matches.is_present("local");
 
-    file_manifest = update(bing_flag,wallheaven_flag,local_flag,matches.clone(), savepath);
+    let file_manifest = update(bing_flag,wallheaven_flag,local_flag,matches.clone(), savepath);
 
     // last check
     if file_manifest.len() == 0{
@@ -35,6 +45,16 @@ fn main() {
     }
 
     loop {
+        let mut user_interval = matches.value_of("interval").unwrap().parse::<u64>().unwrap();
+
+        //only bing is the argument
+        if matches.is_present("bing") &&
+            !matches.is_present("wallheaven_id") &&
+            !matches.is_present("local") {
+            // set interval to 24 hrs
+            user_interval = 60*60*24
+        }
+
         let wp = file_manifest.get(misc::random_n(file_manifest.len())).unwrap();
         if debug { print_debug_msg(wp) }
         if time.elapsed().as_secs() > matches.value_of("update").unwrap().parse::<u64>().unwrap() {
@@ -44,8 +64,13 @@ fn main() {
             let file_manifest = update(bing_flag,wallheaven_flag,local_flag,matches.to_owned(), savepath);
             time = Instant::now();
         }
-        misc::wait(matches.value_of("interval").unwrap().parse::<u64>().unwrap());
+        misc::wait(user_interval);
+
+        #[cfg(target_os = "linux")]
         change::change_wallpaper_gnome(wp);
+
+        #[cfg(target_os = "windows")]
+        change::change_wallpaper_windows(wp);
     }
 
 }
@@ -59,7 +84,7 @@ fn get_bing() -> Vec<String> {
 }
 
 fn get_wallheaven(collid: i64, username: &str) -> Vec<String> {
-    let collection = wallheaven::wallheaven_getcoll("th4n0s", collid);
+    let collection = wallheaven::wallheaven_getcoll(username, collid);
     let mut coll_urls: Vec<String> = vec![];
 
     for x in collection.unwrap()["data"].as_array() {
