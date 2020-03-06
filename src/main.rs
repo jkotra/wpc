@@ -148,7 +148,7 @@ mod tests {
     #[test]
     fn bing_test_is_downloadable() {
         let bing_url = super::get_bing();
-        let res = super::misc::download(bing_url.get(0).unwrap(),"test.jpg");
+        let res = super::misc::download(bing_url.get(0).unwrap(),"target/test.jpg");
             assert_eq!(res.is_ok(), true)
     }
 
