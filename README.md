@@ -1,5 +1,7 @@
 # WPC  
   
+[![Build Status](https://travis-ci.org/jkotra/wpc.svg?branch=master)](https://travis-ci.org/jkotra/wpc)![](https://img.shields.io/github/languages/code-size/jkotra/wpc)
+
 WPC stands for **W**all **P**aper **C**hanger  
   
 WPC is a wallpaper for Windows/Linux. It can retrieve wallpapers from [wallheaven](https://wallhaven.cc/) and [Bing](https://www.bing.com/) *optionally*.  
