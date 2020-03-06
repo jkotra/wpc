@@ -29,11 +29,13 @@ fn main() {
 
     let wallheaven_flag = matches.is_present("wallheaven_id") &&
         matches.is_present("wallheaven_username");
-
+    
+    if wallheaven_flag {
     if !matches.is_present("wallheaven_id") ||
         !matches.is_present("wallheaven_username") {
         panic!("both wallheaven_id and wallheaven_username must be provided!")
     }
+}
 
     let local_flag = matches.is_present("local");
 
@@ -46,18 +48,27 @@ fn main() {
 
     loop {
         let mut user_interval = matches.value_of("interval").unwrap().parse::<u64>().unwrap();
+        let mut user_update_interval = matches.value_of("update").unwrap().parse::<u64>().unwrap();
 
         //only bing is the argument
         if matches.is_present("bing") &&
             !matches.is_present("wallheaven_id") &&
             !matches.is_present("local") {
-            // set interval to 24 hrs
-            user_interval = 60*60*24
+            // set interval and update interval to 24 hrs
+            user_update_interval = 60*60*24;
+            user_interval = 60*60*24;
         }
 
         let wp = file_manifest.get(misc::random_n(file_manifest.len())).unwrap();
         if debug { print_debug_msg(wp) }
-        if time.elapsed().as_secs() > matches.value_of("update").unwrap().parse::<u64>().unwrap() {
+
+        #[cfg(target_os = "linux")]
+        change::change_wallpaper_gnome(wp);
+
+        #[cfg(target_os = "windows")]
+        change::change_wallpaper_windows(wp);
+        
+        if time.elapsed().as_secs() > user_update_interval {
 
             if debug {print_debug_msg("Updating Images..") }
             // update stuff here
@@ -65,12 +76,6 @@ fn main() {
             time = Instant::now();
         }
         misc::wait(user_interval);
-
-        #[cfg(target_os = "linux")]
-        change::change_wallpaper_gnome(wp);
-
-        #[cfg(target_os = "windows")]
-        change::change_wallpaper_windows(wp);
     }
 
 }
@@ -101,7 +106,8 @@ fn update(bing: bool, wallheaven: bool, local: bool,matches: ArgMatches, savepat
     if bing{
 
         let bing_url = get_bing();
-        misc::download_wallpapers(bing_url.to_vec(), savepath);
+        if matches.is_present("debug") {print_debug_msg(bing_url[0].as_str())}
+        misc::download_wallpapers(bing_url.to_vec(), savepath, Option::from(true));
         for f in update_file_list(savepath) {
             file_manifest.push(f);
         }
@@ -110,7 +116,7 @@ fn update(bing: bool, wallheaven: bool, local: bool,matches: ArgMatches, savepat
     if wallheaven{
         let id = matches.value_of("wallheaven_id").unwrap().parse::<i64>();
         let col = get_wallheaven(id.unwrap(), matches.value_of("wallheaven_username").unwrap());
-        misc::download_wallpapers(col.to_owned(), savepath);
+        misc::download_wallpapers(col.to_owned(), savepath, Option::from(false));
 
         for f in update_file_list(savepath) {
             file_manifest.push(f)

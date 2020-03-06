@@ -17,16 +17,30 @@ pub fn wait(sec: u64) {
     std::thread::sleep(std::time::Duration::from_secs(sec));
 }
 
-pub fn download_wallpapers(urls: Vec<String>, savepath: &str) -> Result<(), Box<dyn std::error::Error>>{
+pub fn download_wallpapers(urls: Vec<String>, savepath: &str, bing: Option<bool>) {
+    let bing = bing.unwrap_or(false);
 
     for url in urls{
-        let filename: Vec<&str> = url.split("/").collect();
-        let filename = format!("{}/{}", savepath, filename[filename.len() - 1]);
-        let res = download(url.as_str(), &filename);
-    }
+            let default_bing_filename = "bing.jpg";
+            let file_vec: Vec<&str>;
 
-    Ok(())
-}
+            if bing {
+            file_vec = url.split("&rf=").collect();
+            } else {
+            file_vec = url.split("/").collect();
+            }
+
+            let filename = format!("{}/{}", savepath, file_vec[file_vec.len() - 1]);
+
+            if filename.len() == 0 { panic!("Filename empty!") }
+            else { 
+                let res = download(url.as_str(), &filename);
+                if res.is_err() {
+                    panic!("cannot download url!")
+                }
+             }
+        }
+    }
 
 fn download(url: &str, filename: &str) -> Result<(), Box<dyn std::error::Error>> {
 

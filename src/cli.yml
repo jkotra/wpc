@@ -23,12 +23,12 @@ args:
           takes_value: false
 
     - wallheaven_id:
-          long: wallheaven_id
+          long: wh_id
           help: Collection ID.
           takes_value: true
 
     - wallheaven_username:
-        long: wallheaven_username
+        long: wh_username
         help: Wallheaven username.
         takes_value: true
 
