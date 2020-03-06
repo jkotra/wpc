@@ -42,7 +42,7 @@ pub fn download_wallpapers(urls: Vec<String>, savepath: &str, bing: Option<bool>
         }
     }
 
-fn download(url: &str, filename: &str) -> Result<(), Box<dyn std::error::Error>> {
+pub fn download(url: &str, filename: &str) -> Result<(), Box<dyn std::error::Error>> {
 
     let filedest = PathBuf::from(filename);
     if filedest.exists(){

@@ -130,3 +130,33 @@ fn update(bing: bool, wallheaven: bool, local: bool,matches: ArgMatches, savepat
     }
     return file_manifest;
 }
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn it_works() {
+        assert_eq!(2 + 2, 4);
+    }
+
+    #[test]
+    fn bing_test_is_jpg() {
+        let bing_url = super::get_bing();
+        let bing_url: Vec<&str> = bing_url[0].split("&rf=").collect();
+        assert_eq!(bing_url.get(1).unwrap().ends_with("jpg"),true)
+    }
+
+    #[test]
+    fn bing_test_is_downloadable() {
+        let bing_url = super::get_bing();
+        let res = super::misc::download(bing_url.get(0).unwrap(),"test.jpg");
+            assert_eq!(res.is_ok(), true)
+    }
+
+    #[test]
+    fn wallheaven_get_wallpapers() {
+        let res = super::wallheaven::wallheaven_getcoll("th4n0s", 655812);
+        assert_eq!(res.is_ok(),true)
+    }
+
+
+}
