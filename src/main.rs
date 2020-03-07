@@ -87,15 +87,23 @@ fn main() {
 
         // Set wallpaper according to OS and / Distro
         #[cfg(target_os = "linux")]
-        let is_de = (linux_distro == "gnome");
-        if is_de { gnome::change_wallpaper_gnome(wp); }
+        fn linux_change() {
+
+            // Gnome
+            let is_de = (linux_distro == "gnome");
+            if is_de { gnome::change_wallpaper_gnome(wp); }
+
+            //KDE / Plasma
+            let is_de = (linux_distro == "kde");
+            if is_de == true { kde::set(wp) }
+        }
 
         #[cfg(target_os = "linux")]
-        let is_de = (linux_distro == "kde");
-        if is_de == true { kde::set(wp) }
+            linux_change();
+
 
         #[cfg(target_os = "windows")]
-        windows::set_wallpaper_win(file);
+        windows::set_wallpaper_win(wp);
 
         #[cfg(target_os = "macos")]
         macos::set_from_path(wp);
