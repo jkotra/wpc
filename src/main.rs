@@ -30,16 +30,19 @@ fn main() {
 
     let is_linux = cfg!(linux);
 
-
+    #[cfg(target_os = "linux")]
     fn get_linux_distro() ->  String {
             if misc::is_linux_gnome_de() { return "gnome".to_string() }
             else if misc::is_linux_kde_de() { return "kde".to_string() }
             else { return "Not Supported".to_string() }
     }
-
+    #[cfg(target_os = "linux")]
     let linux_distro = get_linux_distro();
+
+    #[cfg(target_os = "linux")]{
     if debug { print_debug_msg( linux_distro.as_str() ) }
     if linux_distro == "Not Supported" { panic!("Distro not supported!") }
+    }
 
 
     // let mut wallpaper_manifest: Vec<String> = vec![];
