@@ -7,17 +7,40 @@ use crate::misc::{update_file_list, print_debug_msg};
 #[path = "api/wallheaven.rs"] mod wallheaven;
 #[path = "api/bing.rs"] mod bing;
 
+#[cfg(target_os = "linux")]
+#[path = "api/distro/kde.rs"] mod kde;
+#[cfg(target_os = "linux")]
+#[path = "api/distro/gnome.rs"] mod gnome;
+
+#[path = "api/distro/lib.rs"] mod lib;
+
 #[cfg(target_os = "windows")]
-#[path = "api/windows.rs"] mod windows;
+#[path = "api/os/windows.rs"] mod windows;
+
+#[cfg(target_os = "macos")]
+#[path = "api/os/macos.rs"] mod macos;
 
 mod misc;
-mod change;
 
 fn main() {
     let yaml = load_yaml!("cli.yml");
     let matches = App::from_yaml(yaml).get_matches();
     let debug = matches.occurrences_of("debug") != 0;
     let mut time = std::time::Instant::now();
+
+    let is_linux = cfg!(linux);
+
+
+    fn get_linux_distro() ->  String {
+            if misc::is_linux_gnome_de() { return "gnome".to_string() }
+            else if misc::is_linux_kde_de() { return "kde".to_string() }
+            else { return "Not Supported".to_string() }
+    }
+
+    let linux_distro = get_linux_distro();
+    if debug { print_debug_msg( linux_distro.as_str() ) }
+    if linux_distro == "Not Supported" { panic!("Distro not supported!") }
+
 
     // let mut wallpaper_manifest: Vec<String> = vec![];
     //let mut file_manifest: Vec<String> = vec![];
@@ -62,11 +85,20 @@ fn main() {
         let wp = file_manifest.get(misc::random_n(file_manifest.len())).unwrap();
         if debug { print_debug_msg(wp) }
 
+        // Set wallpaper according to OS and / Distro
         #[cfg(target_os = "linux")]
-        change::change_wallpaper_gnome(wp);
+        let is_de = (linux_distro == "gnome");
+        if is_de { gnome::change_wallpaper_gnome(wp); }
+
+        #[cfg(target_os = "linux")]
+        let is_de = (linux_distro == "kde");
+        if is_de == true { kde::set(wp) }
 
         #[cfg(target_os = "windows")]
-        change::change_wallpaper_windows(wp);
+        windows::set_wallpaper_win(file);
+
+        #[cfg(target_os = "macos")]
+        macos::set_from_path(wp);
         
         if time.elapsed().as_secs() > user_update_interval {
 
@@ -157,6 +189,5 @@ mod tests {
         let res = super::wallheaven::wallheaven_getcoll("th4n0s", 655812);
         assert_eq!(res.is_ok(),true)
     }
-
 
 }

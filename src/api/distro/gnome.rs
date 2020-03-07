@@ -1,8 +1,5 @@
 use std::process::Command;
 
-#[cfg(target_os = "windows")]
-use crate::windows::set_wallpaper_win;
-
 pub fn change_wallpaper_gnome(file: &str){
 
     let wp = String::from("file://") + file;
@@ -18,10 +15,4 @@ pub fn change_wallpaper_gnome(file: &str){
         panic!("Error while changing wallpaper: {:?}", out.unwrap().status)
     }
 
-}
-
-#[cfg(target_os = "windows")]
-pub fn change_wallpaper_windows(file: &str) {
-
-        set_wallpaper_win(file);
 }

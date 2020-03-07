@@ -77,3 +77,21 @@ pub fn update_file_list(dirpath: &str) -> Vec<String> {
 
     return wallpapers
 }
+
+// linux distro checks
+pub fn is_linux_gnome_de() -> bool {
+    let res = std::env::var("DESKTOP_SESSION").unwrap().to_string();
+    println!("{}",res);
+    if res == "gnome".to_string() { return true }
+    return false;
+}
+
+pub fn is_linux_kde_de() -> bool {
+    let res = std::env::var("DESKTOP_SESSION").unwrap().as_str().to_string();
+    println!("{}",res);
+    if res.contains("plasma") { return true }
+    return false;
+}
+
+
+
