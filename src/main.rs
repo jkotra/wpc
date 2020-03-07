@@ -89,10 +89,7 @@ fn main() {
         if debug { print_debug_msg(wp) }
 
         // Set wallpaper according to OS and / Distro
-        #[cfg(target_os = "linux")]
-        fn linux_change() {
-
-            // Gnome
+        #[cfg(target_os = "linux")]{
             let is_de = (linux_distro == "gnome");
             if is_de { gnome::change_wallpaper_gnome(wp); }
 
@@ -100,9 +97,6 @@ fn main() {
             let is_de = (linux_distro == "kde");
             if is_de == true { kde::set(wp) }
         }
-
-        #[cfg(target_os = "linux")]
-            linux_change();
 
 
         #[cfg(target_os = "windows")]
