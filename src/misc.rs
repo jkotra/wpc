@@ -79,10 +79,14 @@ pub fn update_file_list(dirpath: &str) -> Vec<String> {
 }
 
 // linux distro checks
+
+// Patch Note - budgie-desktop added. based on gnome
+
 pub fn is_linux_gnome_de() -> bool {
     let res = std::env::var("DESKTOP_SESSION").unwrap().to_string();
     println!("{}",res);
     if res == "gnome".to_string() { return true }
+    if res == "budgie-desktop".to_string() { return true }
     return false;
 }
 
