@@ -17,8 +17,9 @@ pub fn wait(sec: u64) {
     std::thread::sleep(std::time::Duration::from_secs(sec));
 }
 
-pub fn download_wallpapers(urls: Vec<String>, savepath: &str, bing: Option<bool>) {
+pub fn download_wallpapers(urls: Vec<String>, savepath: &str, bing: Option<bool>) -> Vec<String> {
     let bing = bing.unwrap_or(false);
+    let mut fileman: Vec<String> = vec![];
 
     for url in urls{
             let default_bing_filename = "bing.jpg";
@@ -31,6 +32,7 @@ pub fn download_wallpapers(urls: Vec<String>, savepath: &str, bing: Option<bool>
             }
 
             let filename = format!("{}/{}", savepath, file_vec[file_vec.len() - 1]);
+            fileman.push(filename.clone());
 
             if filename.len() == 0 { panic!("Filename empty!") }
             else { 
@@ -40,6 +42,9 @@ pub fn download_wallpapers(urls: Vec<String>, savepath: &str, bing: Option<bool>
                 }
              }
         }
+
+    return fileman;
+
     }
 
 pub fn download(url: &str, filename: &str) -> Result<(), Box<dyn std::error::Error>> {
@@ -86,6 +91,7 @@ pub fn is_linux_gnome_de() -> bool {
     let res = std::env::var("DESKTOP_SESSION").unwrap().to_string();
     println!("{}",res);
     if res == "gnome".to_string() { return true }
+    if res == "gnome-xorg".to_string() { return true } //fedora
     if res == "budgie-desktop".to_string() { return true }
     return false;
 }

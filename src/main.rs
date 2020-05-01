@@ -139,32 +139,35 @@ fn get_wallheaven(collid: i64, username: &str) -> Vec<String> {
 
 fn update(bing: bool, wallheaven: bool, local: bool,matches: ArgMatches, savepath: &str) -> Vec<String>{
     let mut file_manifest: Vec<String> = vec![];
+    let mut fileman: Vec<String> = vec![];
 
     if bing{
 
         let bing_url = get_bing();
         if matches.is_present("debug") {print_debug_msg(bing_url[0].as_str())}
-        misc::download_wallpapers(bing_url.to_vec(), savepath, Option::from(true));
-        for f in update_file_list(savepath) {
-            file_manifest.push(f);
-        }
+        fileman = misc::download_wallpapers(bing_url.to_vec(), savepath, Option::from(true));
     }
 
     if wallheaven{
         let id = matches.value_of("wallheaven_id").unwrap().parse::<i64>();
         let col = get_wallheaven(id.unwrap(), matches.value_of("wallheaven_username").unwrap());
-        misc::download_wallpapers(col.to_owned(), savepath, Option::from(false));
+        fileman = misc::download_wallpapers(col.to_owned(), savepath, Option::from(false));
+    }
 
+
+
+    if matches.is_present("only"){
+
+        //only use downloaded/remote wallpapers.
+        file_manifest = fileman;
+
+    }else {
         for f in update_file_list(savepath) {
             file_manifest.push(f)
         }
     }
 
-    if local{
-        for f in update_file_list(savepath){
-            file_manifest.push(f)
-        }
-    }
+
     return file_manifest;
 }
 

@@ -1,5 +1,5 @@
 name: WPC
-version: "0.1.1"
+version: "0.1.2"
 author: Jagadeesh K. <jagadeesh@stdin.top>
 about: Wall Paper Changer
 args:
@@ -45,6 +45,12 @@ args:
           help: Update interval in Secs.
           required: true
           takes_value: true
+
+    - only:
+        short: o
+        long: only
+        help: Only use remotely downloaded wallpapers.
+        takes_value: false
 
     - debug:
           short: D
