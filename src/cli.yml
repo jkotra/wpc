@@ -1,7 +1,7 @@
 name: WPC
-version: "0.1.2"
+version: "0.1.3"
 author: Jagadeesh K. <jagadeesh@stdin.top>
-about: Wall Paper Changer
+about: Wallpaper changer for Windows/Lniux
 args:
     - directory:
         short: d
@@ -22,15 +22,11 @@ args:
           help: Bing Wallpaper of the Day.
           takes_value: false
 
-    - wallheaven_id:
-          long: wh_id
-          help: Collection ID.
-          takes_value: true
-
-    - wallheaven_username:
-        long: wh_username
-        help: Wallheaven username.
-        takes_value: true
+    - wallheaven:
+        short: w
+        long: wallheaven
+        help: wallheaven.cc
+        takes_value: false
 
     - interval:
           short: i
@@ -50,6 +46,12 @@ args:
         short: o
         long: only
         help: Only use remotely downloaded wallpapers.
+        takes_value: false
+
+    - startup:
+        short: S
+        long: startup
+        help: start WPC at startup.
         takes_value: false
 
     - debug:

@@ -6,7 +6,6 @@ rust:
 os:
   - linux
   - windows
-  - osx
 jobs:
   allow_failures:
     - rust: nightly

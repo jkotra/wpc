@@ -1,16 +1,22 @@
 use std::time::{Duration, Instant};
-use std::io::Write;
+use std::path::Path;
 use std::io;
 use std::fs::File;
+
+use std::io::Write;
+
 use std::path::PathBuf;
+
+use dirs;
 
 extern crate rand;
 use rand::Rng;
 use chrono;
+use std::env::current_exe;
 
 pub fn print_debug_msg(content: &str) {
     let now = std::time::SystemTime::now();
-    println!("{:?}: {}", chrono::offset::Local::now(), content)
+    println!("[DEBUG {:?}]: {}", chrono::offset::Local::now(), content)
 }
 
 pub fn wait(sec: u64) {
@@ -89,7 +95,6 @@ pub fn update_file_list(dirpath: &str) -> Vec<String> {
 
 pub fn is_linux_gnome_de() -> bool {
     let res = std::env::var("DESKTOP_SESSION").unwrap().to_string();
-    println!("{}",res);
     if res == "gnome".to_string() { return true }
     if res == "gnome-xorg".to_string() { return true } //fedora
     if res == "budgie-desktop".to_string() { return true }
@@ -98,10 +103,39 @@ pub fn is_linux_gnome_de() -> bool {
 
 pub fn is_linux_kde_de() -> bool {
     let res = std::env::var("DESKTOP_SESSION").unwrap().as_str().to_string();
-    println!("{}",res);
     if res.contains("plasma") { return true }
     return false;
 }
 
+pub fn add_to_startup_gnome() -> bool{
+
+    if !is_linux_gnome_de(){
+        println!("Distro not supported!");
+        return false;
+    }
+
+    let curr_exe = std::env::current_exe().unwrap();
+    let curr_exe = curr_exe.to_str().unwrap();
+
+    let startup = format!("[Desktop Entry]
+Type=Application
+Name=WPC
+Exec={} -d /home/jojo/Pictures/wpc/ -l -i 60 -u 60
+Icon=
+Comment=
+X-GNOME-Autostart-enabled=true\n",
+                          curr_exe);
+let home = dirs::home_dir().unwrap();
+    let home = home.to_str().unwrap();
+    let startup_path = format!("{}/.config/autostart/wpc.desktop", home.to_owned());
+
+let mut f = File::create(&startup_path).expect("cannot create startup file!");
+    f.write_all(startup.as_bytes());
+    if Path::new(&startup_path).exists() {
+        println!("Added to startup.");
+    }
+    return true;
+
+}
 
 

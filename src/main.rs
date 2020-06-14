@@ -1,14 +1,22 @@
 #[macro_use]
 extern crate clap;
+use std::fs;
+use std::fs::File;
+use std::path::Path;
+
+use serde_json;
+use serde_json::{json, Value};
+
 use clap::{App, ArgMatches};
 use std::time::{Duration, Instant};
-use crate::misc::{update_file_list, print_debug_msg};
+use crate::misc::{update_file_list, print_debug_msg, add_to_startup_gnome};
 
 #[path = "api/wallheaven.rs"] mod wallheaven;
 #[path = "api/bing.rs"] mod bing;
 
 #[cfg(target_os = "linux")]
 #[path = "api/distro/kde.rs"] mod kde;
+
 #[cfg(target_os = "linux")]
 #[path = "api/distro/gnome.rs"] mod gnome;
 
@@ -17,10 +25,14 @@ use crate::misc::{update_file_list, print_debug_msg};
 #[cfg(target_os = "windows")]
 #[path = "api/os/windows.rs"] mod windows;
 
-#[cfg(target_os = "macos")]
-#[path = "api/os/macos.rs"] mod macos;
 
 mod misc;
+
+//this stuct will be used to store wallheaven credentials.
+struct WhCreds {
+        username: String,
+        coll_id: i64,
+}
 
 fn main() {
     let yaml = load_yaml!("cli.yml");
@@ -29,6 +41,13 @@ fn main() {
     let mut time = std::time::Instant::now();
 
     let is_linux = cfg!(linux);
+
+    if (matches.is_present("startup")){
+        println!("Adding WPC to startup...");
+        add_to_startup_gnome();
+    }
+
+    let mut whcreds: WhCreds = WhCreds { username: String::from("None"), coll_id: 0 };
 
     #[cfg(target_os = "linux")]
     fn get_linux_distro() ->  String {
@@ -53,19 +72,56 @@ fn main() {
     // check flags
     let bing_flag = matches.is_present("bing");
 
-    let wallheaven_flag = matches.is_present("wallheaven_id") &&
-        matches.is_present("wallheaven_username");
+    let wallheaven_flag = matches.is_present("wallheaven");
     
     if wallheaven_flag {
-    if !matches.is_present("wallheaven_id") ||
-        !matches.is_present("wallheaven_username") {
-        panic!("both wallheaven_id and wallheaven_username must be provided!")
-    }
+
+        // check if file wallheaven.json exists in cwd.
+        if !Path::new("wallheaven.json").exists() {
+
+            // create file
+
+            // ask user input
+            let mut wh_username = String::new();
+            let mut wh_coll_id = String::new();
+
+
+            println!("Wallheaven Username:");
+            std::io::stdin().read_line(&mut wh_username).unwrap();
+
+            println!("\nWallheaven Collection ID:");
+            std::io::stdin().read_line(&mut wh_coll_id).unwrap();
+
+            //remove tariling \n
+            wh_username.pop();
+            wh_coll_id.pop();
+
+            //convert wh_coll_id to int64
+            let wh_coll_id = wh_coll_id.parse::<i64>().unwrap();
+
+            // save user input to json
+            let creds = json!({"wh_username": &wh_username, "wh_coll_id": wh_coll_id });
+            let mut wh_json_file = File::create("wallheaven.json").expect("failed to create file");
+            serde_json::to_writer(&wh_json_file, &creds);
+        }
+
+
+        // read wallheaven.json
+        let f = fs::read_to_string("wallheaven.json");
+        let wh_json_buf: Value = serde_json::from_str(&f.unwrap()).unwrap();
+
+        whcreds.username = wh_json_buf["wh_username"].as_str().unwrap().to_string();
+        whcreds.coll_id = wh_json_buf["wh_coll_id"].as_i64().unwrap()
 }
 
     let local_flag = matches.is_present("local");
 
-    let file_manifest = update(bing_flag,wallheaven_flag,local_flag,matches.clone(), savepath);
+    let file_manifest = update(bing_flag,
+                               wallheaven_flag,
+                               &whcreds,
+                               local_flag,
+                               matches.clone(),
+                               savepath);
 
     // last check
     if file_manifest.len() == 0{
@@ -78,7 +134,7 @@ fn main() {
 
         //only bing is the argument
         if matches.is_present("bing") &&
-            !matches.is_present("wallheaven_id") &&
+            !matches.is_present("wallheaven") &&
             !matches.is_present("local") {
             // set interval and update interval to 24 hrs
             user_update_interval = 60*60*24;
@@ -93,23 +149,19 @@ fn main() {
             let is_de = (linux_distro == "gnome");
             if is_de { gnome::change_wallpaper_gnome(wp); }
 
-            //KDE / Plasma
+            // KDE / Plasma
             let is_de = (linux_distro == "kde");
             if is_de == true { kde::set(wp) }
         }
 
-
         #[cfg(target_os = "windows")]
         windows::set_wallpaper_win(wp);
-
-        #[cfg(target_os = "macos")]
-        macos::set_from_path(wp);
         
         if time.elapsed().as_secs() > user_update_interval {
 
             if debug {print_debug_msg("Updating Images..") }
             // update stuff here
-            let file_manifest = update(bing_flag,wallheaven_flag,local_flag,matches.to_owned(), savepath);
+            let file_manifest = update(bing_flag,wallheaven_flag, &whcreds, local_flag,matches.to_owned(), savepath);
             time = Instant::now();
         }
         misc::wait(user_interval);
@@ -137,7 +189,7 @@ fn get_wallheaven(collid: i64, username: &str) -> Vec<String> {
     return coll_urls
 }
 
-fn update(bing: bool, wallheaven: bool, local: bool,matches: ArgMatches, savepath: &str) -> Vec<String>{
+fn update(bing: bool, wallheaven: bool, wallheaven_creds: &WhCreds, local: bool,matches: ArgMatches, savepath: &str) -> Vec<String>{
     let mut file_manifest: Vec<String> = vec![];
     let mut fileman: Vec<String> = vec![];
 
@@ -149,8 +201,11 @@ fn update(bing: bool, wallheaven: bool, local: bool,matches: ArgMatches, savepat
     }
 
     if wallheaven{
-        let id = matches.value_of("wallheaven_id").unwrap().parse::<i64>();
-        let col = get_wallheaven(id.unwrap(), matches.value_of("wallheaven_username").unwrap());
+        let wallheaven_username = &wallheaven_creds.username;
+        let wallheaven_coll_id = wallheaven_creds.coll_id;
+
+        let col = get_wallheaven(wallheaven_coll_id, &wallheaven_username);
+
         fileman = misc::download_wallpapers(col.to_owned(), savepath, Option::from(false));
     }
 

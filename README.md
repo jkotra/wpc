@@ -2,60 +2,61 @@
   
 [![Build Status](https://travis-ci.org/jkotra/wpc.svg?branch=master)](https://travis-ci.org/jkotra/wpc)![](https://img.shields.io/github/languages/code-size/jkotra/wpc)
 
-WPC stands for **W**all **P**aper **C**hanger  
+WPC *stands for* **W**all **P**aper **C**hanger.
   
-WPC is a wallpaper changer for Windows/Linux/MacOS. It can retrieve wallpapers from [wallheaven](https://wallhaven.cc/) and [Bing](https://www.bing.com/) *optionally*.  
+WPC is a wallpaper changer for Windows/Linux. 
+
+*optionally*, It can retrieve wallpapers from [Wallheaven.cc](https://wallhaven.cc/) and [Bing.com](https://www.bing.com/).  
   
 # Usage  
   
 ```batch  
-WPC 0.1.2
+WPC 0.1.3
 Jagadeesh K. <jagadeesh@stdin.top>
-Wall Paper Changer
+Wallpaper changer for Windows/Lniux
 
 USAGE:
-    wpc [FLAGS] [OPTIONS] --directory <directory> --interval <interval> --update <update>
+    wpc [FLAGS] --directory <directory> --interval <interval> --update <update>
 
 FLAGS:
-    -b, --bing       Bing Wallpaper of the Day.
-    -D, --debug      show debug messages.
-    -h, --help       Prints help information
-    -l, --local      Offline Mode.
-    -o, --only       Only use remotely downloaded wallpapers.
-    -V, --version    Prints version information
+    -b, --bing          Bing Wallpaper of the Day.
+    -D, --debug         show debug messages.
+    -h, --help          Prints help information
+    -l, --local         Offline Mode.
+    -o, --only          Only use remotely downloaded wallpapers.
+    -S, --startup       start WPC at startup.
+    -V, --version       Prints version information
+    -w, --wallheaven    wallheaven.cc
 
 OPTIONS:
-    -d, --directory <directory>                directory of wallpapers.
-    -i, --interval <interval>                  interval in Secs.
-    -u, --update <update>                      Update interval in Secs.
-        --wh_id <wallheaven_id>                Collection ID.
-        --wh_username <wallheaven_username>    Wallheaven username. 
+    -d, --directory <directory>    directory of wallpapers.
+    -i, --interval <interval>      interval in Secs.
+    -u, --update <update>          Update interval in Secs.
+
  ```  
   
 # Example 
   
-* Retrieve and use images from [wallheaven](https://wallhaven.cc/).
+* Retrieve and use images from [wallheaven](https://wallhaven.cc/). *60sec* interval.
+
+`./wpc --directory "/home/jojo/Pictures/wpc/" -w -u 60 -i 60`
+
   
-`./wpc.exe -u 10000 -i 10 -d C:\Users\thanos\Pictures\wh\ --wh_id 648286 --wh_username th4n0s`  
-  
-* Use local images from folder  .
-  
-`./wpc.exe --local -u 10000 -i 10 -d C:\Users\thanos\Pictures\`  
+* Use local folder with images.
+
+`./wpc --directory "/home/jojo/Pictures/wpc/" -l -u 60 -i 60`
   
 * [Bing](https://www.bing.com/) wallpaper of the day.  
-  
-`./wpc.exe --b -u -1 -i -1 -d C:\Users\thanos\Pictures\bing\`  
+
+`./wpc --directory "/home/jojo/Pictures/wpc/" -b -u 60 -i 60`
+
 
 # Wallheaven API
 
 Complete [wallheaven API](https://wallhaven.cc/help/api) is implemented in [api/wallheaven.rs](https://github.com/jkotra/wpc/blob/master/src/api/wallheaven.rs)
 
-Feel free to use it in any of your projects.
-
 # Building  
-  
-* Windows and Linux  
-  
+
 `cargo build --release`  
   
 Binary is located at `target/release/`

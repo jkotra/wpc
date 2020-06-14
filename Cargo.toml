@@ -15,7 +15,7 @@ clap = {version = "2.33", features = ["yaml"]}
 rand = "0.7"
 chrono = "0.4.10"
 enquote = "1.0.3"
-dirs = "1.0"
+dirs = "2.0.2"
 
 [target.'cfg(windows)'.dependencies]
 winapi = { version = "0.3", features = ["winuser"] }
