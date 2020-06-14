@@ -117,16 +117,18 @@ pub fn add_to_startup_gnome() -> bool{
     let curr_exe = std::env::current_exe().unwrap();
     let curr_exe = curr_exe.to_str().unwrap();
 
+    let home = dirs::home_dir().unwrap();
+    let home = home.to_str().unwrap();
+
     let startup = format!("[Desktop Entry]
 Type=Application
 Name=WPC
-Exec={} -d /home/jojo/Pictures/wpc/ -l -i 60 -u 60
+Exec={} -d {}/Pictures/wpc/ -l -i 60 -u 60
 Icon=
 Comment=
 X-GNOME-Autostart-enabled=true\n",
-                          curr_exe);
-let home = dirs::home_dir().unwrap();
-    let home = home.to_str().unwrap();
+                          curr_exe, home);
+
     let startup_path = format!("{}/.config/autostart/wpc.desktop", home.to_owned());
 
 let mut f = File::create(&startup_path).expect("cannot create startup file!");
