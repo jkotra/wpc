@@ -107,7 +107,7 @@ pub fn is_linux_kde_de() -> bool {
     return false;
 }
 
-pub fn add_to_startup_gnome() -> bool{
+pub fn add_to_startup_gnome(wdir: String, interval: i32, update_interval: i32) -> bool{
 
     if !is_linux_gnome_de(){
         println!("Distro not supported!");
@@ -123,11 +123,11 @@ pub fn add_to_startup_gnome() -> bool{
     let startup = format!("[Desktop Entry]
 Type=Application
 Name=WPC
-Exec={} -d {}/Pictures/wpc/ -l -i 60 -u 60
+Exec={} -d {} -l -i {} -u {}
 Icon=
 Comment=
 X-GNOME-Autostart-enabled=true\n",
-                          curr_exe, home);
+                          curr_exe, wdir, interval, update_interval);
 
     let startup_path = format!("{}/.config/autostart/wpc.desktop", home.to_owned());
 

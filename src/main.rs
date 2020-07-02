@@ -44,7 +44,9 @@ fn main() {
 
     if (matches.is_present("startup")){
         println!("Adding WPC to startup...");
-        add_to_startup_gnome();
+        add_to_startup_gnome(matches.value_of("directory").unwrap().to_string(),
+                            matches.value_of("interval").unwrap().parse::<i32>().unwrap(),
+                             matches.value_of("update").unwrap().parse::<i32>().unwrap());
     }
 
     let mut whcreds: WhCreds = WhCreds { username: String::from("None"), coll_id: 0 };
@@ -160,8 +162,15 @@ fn main() {
         if time.elapsed().as_secs() > user_update_interval {
 
             if debug {print_debug_msg("Updating Images..") }
+
             // update stuff here
             let file_manifest = update(bing_flag,wallheaven_flag, &whcreds, local_flag,matches.to_owned(), savepath);
+
+            //print file_manifest to terminal if debug enabled.
+            if debug {
+                println!("{:?}", file_manifest)
+            }
+
             time = Instant::now();
         }
         misc::wait(user_interval);
