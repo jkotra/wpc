@@ -102,8 +102,6 @@ fn main() {
             wh_coll_id = wh_coll_id.replace("\n", "");
             wh_coll_id = wh_coll_id.replace("\r", "");
 
-            println!("received collid: {:?}", wh_coll_id);
-
             //convert wh_coll_id to int64
             let wh_coll_id = wh_coll_id.parse::<i64>().unwrap();
 
