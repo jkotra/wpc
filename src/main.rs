@@ -41,6 +41,7 @@ fn main() {
     let mut time = std::time::Instant::now();
 
     let is_linux = cfg!(linux);
+    let is_windows = cfg!(windows);
 
     if (matches.is_present("startup")){
         println!("Adding WPC to startup...");
@@ -94,9 +95,14 @@ fn main() {
             println!("\nWallheaven Collection ID:");
             std::io::stdin().read_line(&mut wh_coll_id).unwrap();
 
-            //remove tariling \n
-            wh_username.pop();
-            wh_coll_id.pop();
+            //remove \n \r
+            wh_username = wh_username.replace("\n", "");
+            wh_username = wh_username.replace("\r", "");
+
+            wh_coll_id = wh_coll_id.replace("\n", "");
+            wh_coll_id = wh_coll_id.replace("\r", "");
+
+            println!("received collid: {:?}", wh_coll_id);
 
             //convert wh_coll_id to int64
             let wh_coll_id = wh_coll_id.parse::<i64>().unwrap();
