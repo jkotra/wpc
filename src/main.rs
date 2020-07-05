@@ -147,7 +147,11 @@ fn main() {
             user_interval = 60*60*24;
         }
 
-        let wp = file_manifest.get(misc::random_n(file_manifest.len())).unwrap();
+        let rand_n = misc::random_n(file_manifest.len());
+
+        //print random number to user if debug enabled.
+        if (debug) { println!("Random number: {} total: {}", rand_n, file_manifest.len()) }
+        let wp = file_manifest.get(rand_n).unwrap();
         if debug { print_debug_msg(wp) }
 
         // Set wallpaper according to OS and / Distro
