@@ -8,7 +8,7 @@ use serde_json;
 use serde_json::{json, Value};
 
 use clap::{App, ArgMatches};
-use std::time::{Duration, Instant};
+use std::time::{Instant};
 use crate::misc::{update_file_list, print_debug_msg, add_to_startup_gnome};
 
 #[path = "api/wallheaven.rs"] mod wallheaven;
@@ -40,10 +40,10 @@ fn main() {
     let debug = matches.occurrences_of("debug") != 0;
     let mut time = std::time::Instant::now();
 
-    let is_linux = cfg!(linux);
-    let is_windows = cfg!(windows);
+    let _is_linux = cfg!(linux);
+    let _is_windows = cfg!(windows);
 
-    if (matches.is_present("startup")){
+    if matches.is_present("startup"){
         println!("Adding WPC to startup...");
         add_to_startup_gnome(matches.value_of("directory").unwrap().to_string(),
                             matches.value_of("interval").unwrap().parse::<i32>().unwrap(),
@@ -107,8 +107,12 @@ fn main() {
 
             // save user input to json
             let creds = json!({"wh_username": &wh_username, "wh_coll_id": wh_coll_id });
-            let mut wh_json_file = File::create("wallheaven.json").expect("failed to create file");
-            serde_json::to_writer(&wh_json_file, &creds);
+            let wh_json_file = File::create("wallheaven.json").expect("failed to create file");
+            let res = serde_json::to_writer(&wh_json_file, &creds);
+
+            if res.is_err(){
+                panic!("cannot write to wallheaven.json");
+            }
         }
 
 
@@ -150,17 +154,17 @@ fn main() {
         let rand_n = misc::random_n(file_manifest.len());
 
         //print random number to user if debug enabled.
-        if (debug) { println!("Random number: {} total: {}", rand_n, file_manifest.len()) }
+        if debug { println!("Random number: {} total: {}", rand_n, file_manifest.len()) }
         let wp = file_manifest.get(rand_n).unwrap();
         if debug { print_debug_msg(wp) }
 
         // Set wallpaper according to OS and / Distro
         #[cfg(target_os = "linux")]{
-            let is_de = (linux_distro == "gnome");
+            let is_de = linux_distro == "gnome";
             if is_de { gnome::change_wallpaper_gnome(wp); }
 
             // KDE / Plasma
-            let is_de = (linux_distro == "kde");
+            let is_de = linux_distro == "kde";
             if is_de == true { kde::set(wp) }
         }
 
@@ -206,7 +210,8 @@ fn get_wallheaven(collid: i64, username: &str) -> Vec<String> {
     return coll_urls
 }
 
-fn update(bing: bool, wallheaven: bool, wallheaven_creds: &WhCreds, local: bool,matches: ArgMatches, savepath: &str) -> Vec<String>{
+#[allow(unused_variables)]
+fn update(bing: bool, wallheaven: bool, wallheaven_creds: &WhCreds, local: bool, matches: ArgMatches, savepath: &str) -> Vec<String>{
     let mut file_manifest: Vec<String> = vec![];
     let mut fileman: Vec<String> = vec![];
 
@@ -220,9 +225,7 @@ fn update(bing: bool, wallheaven: bool, wallheaven_creds: &WhCreds, local: bool,
     if wallheaven{
         let wallheaven_username = &wallheaven_creds.username;
         let wallheaven_coll_id = wallheaven_creds.coll_id;
-
         let col = get_wallheaven(wallheaven_coll_id, &wallheaven_username);
-
         fileman = misc::download_wallpapers(col.to_owned(), savepath, Option::from(false));
     }
 
@@ -234,6 +237,7 @@ fn update(bing: bool, wallheaven: bool, wallheaven_creds: &WhCreds, local: bool,
         file_manifest = fileman;
 
     }else {
+        // local option
         for f in update_file_list(savepath) {
             file_manifest.push(f)
         }

@@ -1,18 +1,12 @@
-use dirs;
 use enquote;
-use std::fs::File;
-use std::io::BufRead;
-use std::io::BufReader;
-use Result;
 use crate::lib::run;
-
 
 //Taken from: reujab/wallpaper.rs
 
 
 /// Sets the wallpaper for KDE.
 pub fn set(path: &str) {
-    run(
+    let res = run(
         "qdbus",
         &[
             "org.kde.plasmashell",
@@ -29,4 +23,9 @@ for (var i = 0; i < monitors.length; i++) {{
             ),
         ],
     );
+
+    if res.is_err(){
+        panic!("cannot set KDE wallpaper!");
+    }
+
 }

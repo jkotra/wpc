@@ -1,4 +1,3 @@
-use std::time::{Duration, Instant};
 use std::path::Path;
 use std::io;
 use std::fs::File;
@@ -12,10 +11,9 @@ use dirs;
 extern crate rand;
 use rand::Rng;
 use chrono;
-use std::env::current_exe;
+
 
 pub fn print_debug_msg(content: &str) {
-    let now = std::time::SystemTime::now();
     println!("[DEBUG {:?}]: {}", chrono::offset::Local::now(), content)
 }
 
@@ -28,7 +26,6 @@ pub fn download_wallpapers(urls: Vec<String>, savepath: &str, bing: Option<bool>
     let mut fileman: Vec<String> = vec![];
 
     for url in urls{
-            let default_bing_filename = "bing.jpg";
             let file_vec: Vec<&str>;
 
             if bing {
@@ -132,8 +129,9 @@ X-GNOME-Autostart-enabled=true\n",
     let startup_path = format!("{}/.config/autostart/wpc.desktop", home.to_owned());
 
 let mut f = File::create(&startup_path).expect("cannot create startup file!");
-    f.write_all(startup.as_bytes());
-    if Path::new(&startup_path).exists() {
+    let res = f.write_all(startup.as_bytes());
+
+    if res.is_err() != true && Path::new(&startup_path).exists() {
         println!("Added to startup.");
     }
     return true;

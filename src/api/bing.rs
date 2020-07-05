@@ -1,5 +1,6 @@
 use serde_json::{Value};
 
+#[allow(dead_code)]
 pub fn get_wallpaper_of_the_day() -> Result<serde_json::value::Value, Box<dyn std::error::Error>> {
     let resp = reqwest::blocking::get("https://www.bing.com/HPImageArchive.aspx?format=js&idx=0&n=1&mkt=en-US").expect("Unable to make GET request!")
         .text()?;
