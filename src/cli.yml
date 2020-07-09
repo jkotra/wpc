@@ -1,7 +1,7 @@
 name: WPC
-version: "0.1.4"
+version: "0.5"
 author: Jagadeesh K. <jagadeesh@stdin.top>
-about: Wallpaper changer for Windows/Lniux
+about: Wallpaper changer for Windows/Linux
 args:
     - directory:
         short: d
@@ -59,3 +59,9 @@ args:
           long: debug
           help: show debug messages.
           takes_value: false
+
+    - daemon:
+        long: daemon
+        help: start as daemon.
+        takes_value: false
+

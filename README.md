@@ -10,16 +10,18 @@ WPC is a wallpaper changer for Windows/Linux.
   
 # Usage  
   
-```batch  
-WPC 0.1.3
+```
+
+WPC 0.1.5
 Jagadeesh K. <jagadeesh@stdin.top>
-Wallpaper changer for Windows/Lniux
+Wallpaper changer for Windows/Linux
 
 USAGE:
-    wpc [FLAGS] --directory <directory> --interval <interval> --update <update>
+    wpc [FLAGS] [OPTIONS] --directory <directory>
 
 FLAGS:
     -b, --bing          Bing Wallpaper of the Day.
+        --daemon        start as daemon.
     -D, --debug         show debug messages.
     -h, --help          Prints help information
     -l, --local         Offline Mode.
@@ -30,26 +32,12 @@ FLAGS:
 
 OPTIONS:
     -d, --directory <directory>    directory of wallpapers.
-    -i, --interval <interval>      interval in Secs.
-    -u, --update <update>          Update interval in Secs.
+    -i, --interval <interval>      interval in Secs. [default: 60]
+    -u, --update <update>          Update interval in Secs. [default: 120]
 
  ```  
-  
-# Example 
-  
-* Retrieve and use images from [wallheaven](https://wallhaven.cc/). *60sec* interval.
 
-`./wpc --directory "/home/jojo/Pictures/wpc/" -w -u 60 -i 60`
-
-  
-* Use local folder with images.
-
-`./wpc --directory "/home/jojo/Pictures/wpc/" -l -u 60 -i 60`
-  
-* [Bing](https://www.bing.com/) wallpaper of the day.  
-
-`./wpc --directory "/home/jojo/Pictures/wpc/" -b -u 60 -i 60`
-
+---
 
 # Wallheaven API
 
@@ -59,4 +47,4 @@ Complete [wallheaven API](https://wallhaven.cc/help/api) is implemented in [api/
 
 `cargo build --release`  
   
-Binary is located at `target/release/`
+Binary will be located at `target/release/`
