@@ -9,6 +9,8 @@ use serde_json;
 use serde_json::{json, Value};
 
 use clap::{App};
+
+#[allow(unused_imports)]
 use crate::misc::{wait, is_linux_gnome_de, print_debug_msg, download_wallpapers, random_n};
 
 use std::process::exit;
@@ -53,8 +55,6 @@ fn start_daemon() {
     for i in 0..args.len(){
 
         let el = args.get(i).unwrap().to_string();
-
-        println!("{}", el);
 
         //remove debug arg
         if let "-D" = &*el {
@@ -115,12 +115,14 @@ fn main() {
     }
 
 
-    if misc::is_linux_gnome_de() != true && !(cfg!(windows)) {
-        println!("OS / Distro not supported!");
-    }
-    else if is_linux_gnome_de() {
-        if debug {
-            print_debug_msg("GNOME Distro detected!");
+    if cfg!(linux){
+        if !misc::is_linux_gnome_de() {
+            println!("OS / Distro not supported!");
+        }
+        else {
+            if debug {
+                print_debug_msg("GNOME Distro detected!");
+            }
         }
     }
 
