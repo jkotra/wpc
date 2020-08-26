@@ -12,7 +12,7 @@ WPC is a wallpaper changer for Windows/Linux.
   
 ```
 
-WPC 0.1.5
+WPC 0.6.0
 Jagadeesh K. <jagadeesh@stdin.top>
 Wallpaper changer for Windows/Linux
 
@@ -21,7 +21,6 @@ USAGE:
 
 FLAGS:
     -b, --bing          Bing Wallpaper of the Day.
-        --daemon        start as daemon.
     -D, --debug         show debug messages.
     -h, --help          Prints help information
     -l, --local         Offline Mode.
@@ -33,7 +32,9 @@ FLAGS:
 OPTIONS:
     -d, --directory <directory>    directory of wallpapers.
     -i, --interval <interval>      interval in Secs. [default: 60]
+        --maxage <maxage>          maximum age of wallpaper in hrs. [default: -1]
     -u, --update <update>          Update interval in Secs. [default: 120]
+
 
  ```  
 

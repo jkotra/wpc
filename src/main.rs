@@ -13,9 +13,6 @@ use clap::{App};
 #[allow(unused_imports)]
 use crate::misc::{wait, is_linux_gnome_de, print_debug_msg, download_wallpapers, random_n};
 
-use std::process::exit;
-use std::env::current_exe;
-
 mod misc;
 
 #[cfg(target_os = "linux")]
@@ -43,56 +40,17 @@ struct WpcUpdateParams{
     local: bool,
     only: bool,
     debug: bool,
+    maxage: i64,
     wallheaven_creds: WhCreds,
     savepath: String,
 }
 
-fn start_daemon() {
-
-    let mut args: Vec<String> = std::env::args().collect();
-    args.remove(0); //remove program name
-
-    for i in 0..args.len(){
-
-        let el = args.get(i).unwrap().to_string();
-
-        //remove debug arg
-        if let "-D" = &*el {
-             &args.remove(i);
-        }
-
-        else if let "--debug" = &*el {
-             &args.remove(i);
-        }
-        //remove daemon arg
-        else if let "--daemon" = &*el {
-             &args.remove(i);
-        }
-
-    }
-
-    print!("=> Program: {} \n FilteredArgs: {:?} \n", current_exe().unwrap().to_str().unwrap(), args);
-
-    let child = std::process::Command::new(current_exe().unwrap().to_str().unwrap())
-        .args(&args)
-        .spawn()
-        .expect("Child process failed to start.");
-
-    println!("WPC Started as Daemon! pid: {}", child.id());
-
-    exit(0);
-
-}
 
 fn main() {
 
     let yaml = load_yaml!("cli.yml");
     let matches = App::from_yaml(yaml).get_matches();
 
-    //start as daemon and exit
-    if matches.is_present("daemon"){
-        start_daemon();
-    }
 
     let debug = matches.occurrences_of("debug") != 0;
     let mut time_since = std::time::Instant::now();
@@ -128,7 +86,7 @@ fn main() {
 
     #[cfg(target_os = "linux")]
     if matches.is_present("startup"){
-        startup::add_to_startup_gnome(savepath.to_string(), user_interval, user_update_interval);
+        startup::add_to_startup_gnome();
     }
 
     //only bing is the argument
@@ -198,6 +156,7 @@ fn main() {
             only: matches.is_present("only"),
             debug: debug,
             wallheaven_creds: whcreds,
+            maxage: matches.value_of("maxage").unwrap().parse::<i64>().unwrap(),
             savepath: savepath.to_string()
         };
 
@@ -252,7 +211,7 @@ fn update_files(params: &WpcUpdateParams) -> Result<Vec<String>, std::io::Error>
 
 
     if params.local{
-        for file in misc::update_file_list(&params.savepath){
+        for file in misc::update_file_list(&params.savepath, params.maxage){
             file_list.push(file);
         }
     }

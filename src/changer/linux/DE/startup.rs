@@ -3,7 +3,19 @@ use std::fs::File;
 use std::io::Write;
 
 
-pub fn add_to_startup_gnome(savepath: String, interval: u64, update_interval: u64) -> bool{
+pub fn add_to_startup_gnome() -> bool{
+
+    let mut args: Vec<String> = std::env::args().collect();
+    args.remove(0); //remove program name
+
+    let args = args.join(" ");
+
+    let mut args = args.replace("--debug", "");
+    args = args.replace("-D", "");
+    args = args.replace("--startup", "");
+
+    println!("program args: {}", args);
+
 
     let curr_exe = std::env::current_exe().unwrap();
     let curr_exe = curr_exe.to_str().unwrap();
@@ -15,10 +27,10 @@ pub fn add_to_startup_gnome(savepath: String, interval: u64, update_interval: u6
     [Desktop Entry]
     Type=Application
     Name=WPC
-    Exec={} -d {} -l -i {} -u {}
+    Exec={} {}
     Icon=
     Comment=
-    X-GNOME-Autostart-enabled=true\n", curr_exe, savepath, interval, update_interval);
+    X-GNOME-Autostart-enabled=true\n", curr_exe, args);
     let startup_path = format!("{}/.config/autostart/wpc.desktop", home.to_owned());
 
     let mut f = File::create(&startup_path).expect("cannot create startup file!");

@@ -4,7 +4,6 @@ use std::path::PathBuf;
 
 extern crate rand;
 use rand::Rng;
-use chrono;
 
 
 pub fn print_debug_msg(content: &str) {
@@ -66,13 +65,28 @@ pub fn random_n(len_max: usize) -> usize {
     rng.gen_range(0,len_max)
 }
 
-pub fn update_file_list(dirpath: &str) -> Vec<String> {
+pub fn update_file_list(dirpath: &str, maxage: i64) -> Vec<String> {
 
     let files = std::fs::read_dir(dirpath).unwrap();
     let mut wallpapers: Vec<String> = vec![];
 
     for file in files {
         let fp = file.unwrap().path().to_str().unwrap().to_string();
+
+        //compute age diff and continue if older then max age!
+        if maxage != -1{
+
+            //current time as timestamp
+            let maxage_time = chrono::Local::now().timestamp() - i64::from(maxage * 60 * 60);
+
+            //get created date and convert to timestamp.
+            let f_ct = std::fs::metadata(&fp).unwrap().created().unwrap().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs();
+
+            if maxage_time as u64 > f_ct{
+                continue;
+            }
+
+        }
 
         if fp.ends_with("png"){ wallpapers.push(fp) }
         else if fp.ends_with("jpg") { wallpapers.push(fp) }

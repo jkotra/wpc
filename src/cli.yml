@@ -1,5 +1,5 @@
 name: WPC
-version: "0.5"
+version: "0.6.0"
 author: Jagadeesh K. <jagadeesh@stdin.top>
 about: Wallpaper changer for Windows/Linux
 args:
@@ -54,14 +54,14 @@ args:
         help: start WPC at startup.
         takes_value: false
 
+    - maxage:
+        long: maxage
+        help: maximum age of wallpaper in hrs.
+        takes_value: true
+        default_value: "-1"
+
     - debug:
           short: D
           long: debug
           help: show debug messages.
           takes_value: false
-
-    - daemon:
-        long: daemon
-        help: start as daemon.
-        takes_value: false
-
