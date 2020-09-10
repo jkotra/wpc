@@ -42,7 +42,7 @@ OPTIONS:
 
 # Wallheaven API
 
-Complete [wallheaven API](https://wallhaven.cc/help/api) is implemented in [api/wallheaven.rs](https://github.com/jkotra/wpc/blob/master/src/api/wallheaven.rs)
+Complete [wallheaven API](https://wallhaven.cc/help/api) is implemented in [api/wallheaven.rs](src/api/web/wallheaven.rs)
 
 # Building  
 
