@@ -25,9 +25,9 @@ pub fn get_wpc_args() -> Vec<String> {
     
     for i in (0..args.len()).rev(){
         if args[i] == "--startup"{ args.remove(i); }
-        else if args[i] == "--S" { args.remove(i); }
+        else if args[i] == "-S" { args.remove(i); }
         else if args[i] == "--debug" { args.remove(i); }
-        else if args[i] == "--D" { args.remove(i); }
+        else if args[i] == "-D" { args.remove(i); }
         else if args[i] == "--background" { args.remove(i); }
     }
 
