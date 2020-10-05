@@ -12,7 +12,7 @@ WPC is a wallpaper changer for Windows/Linux.
   
 ```
 
-WPC 0.6.0
+WPC 0.7.0
 Jagadeesh K. <jagadeesh@stdin.top>
 Wallpaper changer for Windows/Linux
 
@@ -20,6 +20,7 @@ USAGE:
     wpc [FLAGS] [OPTIONS] --directory <directory>
 
 FLAGS:
+        --background    Run WPC in background.
     -b, --bing          Bing Wallpaper of the Day.
     -D, --debug         show debug messages.
     -h, --help          Prints help information
