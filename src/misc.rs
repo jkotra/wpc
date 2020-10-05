@@ -5,6 +5,11 @@ use std::path::PathBuf;
 extern crate rand;
 use rand::Rng;
 
+use std::env::current_exe;
+
+#[cfg(target_os = "windows")]
+use std::os::windows::process::CommandExt;
+
 
 pub fn print_debug_msg(content: &str) {
     println!("[DEBUG {:?}]: {}", chrono::offset::Local::now(), content)
@@ -12,6 +17,40 @@ pub fn print_debug_msg(content: &str) {
 
 pub fn wait(sec: u64) {
     std::thread::sleep(std::time::Duration::from_secs(sec));
+}
+
+pub fn get_wpc_args() -> Vec<String> {
+
+    let mut args: Vec<String> = std::env::args().collect();
+    
+    for i in (0..args.len()).rev(){
+        if args[i] == "--startup"{ args.remove(i); }
+        else if args[i] == "-S" { args.remove(i); }
+        else if args[i] == "--debug" { args.remove(i); }
+        else if args[i] == "-D" { args.remove(i); }
+        else if args[i] == "--background" { args.remove(i); }
+    }
+
+    return args;
+}
+
+pub fn run_in_background(){
+
+    let mut args = get_wpc_args();
+    args.remove(0); //remove executable name
+    
+    #[cfg(target_os = "windows")]
+    let _child = std::process::Command::new(current_exe().unwrap().to_str().unwrap())
+    .args(&args)
+    .creation_flags(0x08000000) //CREATE_NO_WINDOW
+    .spawn()
+    .expect("Child process failed to start.");
+
+    #[cfg(target_os = "linux")]
+    let _child = std::process::Command::new(current_exe().unwrap().to_str().unwrap())
+    .args(&args)
+    .spawn()
+    .expect("Child process failed to start.");
 }
 
 pub fn download_wallpapers(urls: Vec<String>, savepath: &str, bing: bool) -> Vec<String> {

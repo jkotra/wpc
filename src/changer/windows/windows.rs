@@ -10,6 +10,9 @@ use winapi::um::winuser::SPIF_SENDCHANGE;
 use winapi::um::winuser::SPIF_UPDATEINIFILE;
 use winapi::um::winuser::SPI_SETDESKWALLPAPER;
 
+#[path = "../../misc.rs"]
+#[allow(unused)]
+mod misc;
 
 pub fn set_wallpaper_win(path: &str) {
     let path = OsStr::new(path)
@@ -29,4 +32,24 @@ pub fn set_wallpaper_win(path: &str) {
                     panic!("Error: Cannot set windows wallpaper!")
                 }
             }
+}
+
+extern crate winreg;
+use winreg::enums::*;
+
+
+pub fn add_to_startup_reg() {
+    println!("Trying to add WPC to startup...");
+
+    let hkcu = winreg::RegKey::predef(HKEY_LOCAL_MACHINE);
+    let subkey = hkcu.open_subkey_with_flags(r#"Software\Microsoft\Windows\CurrentVersion\Run"#,
+                                    KEY_WRITE).expect("Failed to open subkey");
+    
+    let mut cmd = misc::get_wpc_args();
+    cmd.push(String::from("--background"));
+    let cmd = cmd.join(" ");                       
+
+    subkey.set_value("WPC", &cmd).expect("cannot add value to reg!");
+    println!("WPC added to startup!");
+
 }

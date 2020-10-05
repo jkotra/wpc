@@ -51,6 +51,10 @@ fn main() {
     let yaml = load_yaml!("cli.yml");
     let matches = App::from_yaml(yaml).get_matches();
 
+    if matches.is_present("background"){
+        misc::run_in_background();
+        std::process::exit(0);
+    }
 
     let debug = matches.occurrences_of("debug") != 0;
     let mut time_since = std::time::Instant::now();
@@ -84,9 +88,12 @@ fn main() {
         }
     }
 
-    #[cfg(target_os = "linux")]
     if matches.is_present("startup"){
+        #[cfg(target_os = "linux")]
         startup::add_to_startup_gnome();
+
+        #[cfg(target_os = "windows")]
+        windows::add_to_startup_reg();
     }
 
     //only bing is the argument
