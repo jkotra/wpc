@@ -1,6 +1,6 @@
 [package]
 name = "wpc"
-version = "0.6.0"
+version = "0.7.0"
 authors = ["Jagadeesh Kotra <jagadeesh@stdin.top>"]
 edition = "2018"
 
@@ -18,3 +18,4 @@ dirs = "2.0.2"
 
 [target.'cfg(windows)'.dependencies]
 winapi = { version = "0.3", features = ["winuser"] }
+winreg = "0.7.0"

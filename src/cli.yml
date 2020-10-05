@@ -1,5 +1,5 @@
 name: WPC
-version: "0.6.0"
+version: "0.7.0"
 author: Jagadeesh K. <jagadeesh@stdin.top>
 about: Wallpaper changer for Windows/Linux
 args:
@@ -46,6 +46,11 @@ args:
         short: o
         long: only
         help: Only use remotely downloaded wallpapers.
+        takes_value: false
+
+    - background:
+        long: background
+        help: Run WPC in background.
         takes_value: false
 
     - startup:
