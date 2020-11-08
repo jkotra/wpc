@@ -37,7 +37,34 @@ OPTIONS:
     -u, --update <update>          Update interval in Secs. [default: 120]
 
 
- ```  
+ ```
+
+## How to use?
+
+**WPC** is a command-line application i.e you need to run it from a command prompt or terminal.
+
+1. *cd* to the directory which contains wpc executable.
+2. command line applications are launched using the prefix `./` on linux.
+
+`./wpc` in linux and `wpc` or `./wpc.exe` in windows.
+
+3. edit and play with various command line arguments to your liking.
+
+## Example
+
+```
+#linux
+
+./wpc -d ~/Documents/wpc_test/ -w -i 60 -u 360 --startup
+
+#windows
+
+wpc.exe -d D:/Pics/ -w -i 60 -u 360 --startup
+
+```
+
+The above command will change wallpaper(that are located at `-d`) every 60 seconds, check for new images every 360 seconds, and add **WPC** to startup with the same settings.
+
 
 ---
 
