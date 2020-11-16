@@ -1,5 +1,5 @@
 name: WPC
-version: "0.7.0"
+version: "0.7.1"
 author: Jagadeesh K. <jagadeesh@stdin.top>
 about: Wallpaper changer for Windows/Linux
 args:
@@ -22,24 +22,24 @@ args:
           help: Bing Wallpaper of the Day.
           takes_value: false
 
-    - wallheaven:
+    - wallhaven:
         short: w
-        long: wallheaven
-        help: wallheaven.cc
+        long: wallhaven
+        help: wallhaven.cc
         takes_value: false
 
     - interval:
           short: i
           long: interval
           help: interval in Secs.
-          default_value: "60"
+          default_value: "300"
           takes_value: true
 
     - update:
           short: u
           long: update
           help: Update interval in Secs.
-          default_value: "120"
+          default_value: "3600"
           takes_value: true
 
     - only:

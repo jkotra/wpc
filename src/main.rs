@@ -24,10 +24,10 @@ mod misc;
 #[cfg(target_os = "windows")]
 #[path = "changer/windows/windows.rs"] mod windows;
 
-#[path = "web/wallheaven_api.rs"] mod wallheaven;
+#[path = "web/wallhaven_api.rs"] mod wallhaven;
 #[path = "web/bing_wpod.rs"] mod bing;
 
-//this struct will be used to store wallheaven credentials.
+//this struct will be used to store wallhaven credentials.
 struct WhCreds {
         username: String,
         coll_id: i64
@@ -36,12 +36,12 @@ struct WhCreds {
 // this struct will be used to update images.
 struct WpcUpdateParams{
     bing: bool,
-    wallheaven: bool,
+    wallhaven: bool,
     local: bool,
     only: bool,
     debug: bool,
     maxage: i64,
-    wallheaven_creds: WhCreds,
+    wallhaven_creds: WhCreds,
     savepath: String,
 }
 
@@ -61,12 +61,12 @@ fn main() {
     let savepath = matches.value_of("directory").unwrap();
     let mut local_flag = matches.is_present("local");
     let bing_flag = matches.is_present("bing");
-    let wallheaven_flag = matches.is_present("wallheaven");
+    let wallhaven_flag = matches.is_present("wallhaven");
     let mut user_interval = matches.value_of("interval").unwrap().parse::<u64>().unwrap();
     let mut user_update_interval = matches.value_of("update").unwrap().parse::<u64>().unwrap();
 
 
-    if !local_flag && !bing_flag && !wallheaven_flag{
+    if !local_flag && !bing_flag && !wallhaven_flag{
         local_flag = true;
     }
 
@@ -98,7 +98,7 @@ fn main() {
 
     //only bing is the argument
     if bing_flag &&
-        !wallheaven_flag &&
+        !wallhaven_flag &&
         !local_flag {
 
         // set interval and update interval to 24 hrs
@@ -111,45 +111,51 @@ fn main() {
 
     let mut whcreds: WhCreds = WhCreds { username: String::from("None"), coll_id: -1 };
 
-        if wallheaven_flag {
+        if wallhaven_flag {
 
-            // check if file wallheaven.json exists in CWD.
-            if !Path::new("wallheaven.json").exists() {
+            // check if file wallhaven.json exists in CWD.
+            if !Path::new("wallhaven.json").exists() {
 
                 // ask user for username and coll_id
                 let mut wh_username = String::new();
                 let mut wh_coll_id = String::new();
 
-                println!("wallheaven.cc Username:");
+                println!("\nwallhaven.cc Username:");
                 std::io::stdin().read_line(&mut wh_username).unwrap();
 
-                println!("\nwallheaven.cc Collection ID:");
+                println!("\nwallhaven.cc Collection ID:");
                 std::io::stdin().read_line(&mut wh_coll_id).unwrap();
 
                 //remove \n \r
-                wh_username = wh_username.replace("\n", "");
-                wh_username = wh_username.replace("\r", "");
-
-                wh_coll_id = wh_coll_id.replace("\n", "");
-                wh_coll_id = wh_coll_id.replace("\r", "");
+                wh_username = wh_username.replace("\n", "").replace("\r", "");
+                wh_coll_id = wh_coll_id.replace("\n", "").replace("\r", "");
 
                 //convert wh_coll_id to int64
                 let wh_coll_id = wh_coll_id.parse::<i64>().unwrap();
 
                 // save user input to json
                 let creds = json!({"wh_username": &wh_username, "wh_coll_id": wh_coll_id });
-                let wh_json_file = File::create("wallheaven.json").expect("failed to create file");
+
+                let wh_json_file = match File::create("wallhaven.json"){
+                    Ok(file) => file,
+                    Err(why) => panic!("cannot create file: {:?}", why)
+                };
+
                 let res = serde_json::to_writer(&wh_json_file, &creds);
 
                 if res.is_err() {
-                    panic!("cannot write to wallheaven.json");
+                    panic!("cannot write to wallhaven.json");
                 }
             }
 
 
-            // read wallheaven.json
-            let f = fs::read_to_string("wallheaven.json");
-            let wh_json: Value = serde_json::from_str(&f.unwrap()).unwrap();
+            // read wallhaven.json
+            let f = match fs::read_to_string("wallhaven.json"){
+                Ok(f) => f,
+                Err(why) => panic!("cannot read config: {:?}", why),
+            };
+
+            let wh_json: Value = serde_json::from_str(&f).unwrap();
 
             whcreds.username = wh_json["wh_username"].as_str().unwrap().to_string();
             whcreds.coll_id = wh_json["wh_coll_id"].as_i64().unwrap()
@@ -158,11 +164,11 @@ fn main() {
 
         let wpc_up: WpcUpdateParams = WpcUpdateParams {
             bing: bing_flag,
-            wallheaven: wallheaven_flag,
+            wallhaven: wallhaven_flag,
             local: local_flag,
             only: matches.is_present("only"),
             debug: debug,
-            wallheaven_creds: whcreds,
+            wallhaven_creds: whcreds,
             maxage: matches.value_of("maxage").unwrap().parse::<i64>().unwrap(),
             savepath: savepath.to_string()
         };
@@ -175,7 +181,7 @@ fn main() {
 
         //print random number to user if debug enabled.
         let rand_n = random_n(file_list.len());
-        if debug { println!("RNG Result: {} total: {}", rand_n, file_list.len()) }
+        if debug { println!("[DEBUG] RNG Result: {} total: {}", rand_n, file_list.len()) }
 
         let wp = file_list.get(rand_n).unwrap();
         if debug { misc::print_debug_msg(wp) }
@@ -197,13 +203,13 @@ fn main() {
 
         //infinite loop
         loop {
-            if debug { println!("Waiting interval({})", user_interval) }
+            if debug { println!("[DEBUG] Waiting interval({})", user_interval) }
             wait(user_interval);
 
             change_wallpaper(debug, &file_list);
 
 
-            if debug { println!("Update interval: {} elapsed: {}", user_update_interval, time_since.elapsed().as_secs()) }
+            if debug { println!("[DEBUG] Update interval: {} elapsed: {}", user_update_interval, time_since.elapsed().as_secs()) }
             if time_since.elapsed().as_secs() >= user_update_interval{
                 file_list = update_files(wpc_up.as_ref()).unwrap();
                 time_since = std::time::Instant::now();
@@ -230,15 +236,15 @@ fn update_files(params: &WpcUpdateParams) -> Result<Vec<String>, std::io::Error>
             file_list.push(file);
         }
 
-        if !params.wallheaven && params.only{
+        if !params.wallhaven && params.only{
                 return Ok(file_list);
         }
 
     }
 
-    if params.wallheaven{
+    if params.wallhaven{
 
-        for file in download_wallpapers(get_wallheaven(params.wallheaven_creds.coll_id, &params.wallheaven_creds.username), &params.savepath, false){
+        for file in download_wallpapers(get_wallhaven(params.wallhaven_creds.coll_id, &params.wallhaven_creds.username), &params.savepath, false){
             file_list.push(file)
         }
 
@@ -247,7 +253,7 @@ fn update_files(params: &WpcUpdateParams) -> Result<Vec<String>, std::io::Error>
     if file_list.len() == 0 { panic!("No images found in {}", params.savepath) }
 
     if params.debug {
-        println!("Updated file_list: {:?}", file_list);
+        println!("[DEBUG] Updated file_list: {:?}", file_list);
     }
 
     return Ok(file_list)
@@ -261,8 +267,8 @@ fn get_bing() -> Vec<String> {
     return vec![bing]
 }
 
-fn get_wallheaven(collid: i64, username: &str) -> Vec<String> {
-    let collection = wallheaven::wallheaven_getcoll(username, collid);
+fn get_wallhaven(collid: i64, username: &str) -> Vec<String> {
+    let collection = wallhaven::wallhaven_getcoll(username, collid);
     let mut coll_urls: Vec<String> = vec![];
 
     for x in collection.unwrap()["data"].as_array() {
@@ -295,8 +301,8 @@ mod tests {
     }
 
     #[test]
-    fn wallheaven_get_wallpapers() {
-        let res = super::wallheaven::wallheaven_getcoll("th4n0s", 655812);
+    fn wallhaven_get_wallpapers() {
+        let res = super::wallhaven::wallhaven_getcoll("th4n0s", 803855);
         assert_eq!(res.is_ok(),true)
     }
 

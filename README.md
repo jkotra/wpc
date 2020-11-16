@@ -6,7 +6,7 @@ WPC *stands for* **W**all **P**aper **C**hanger.
   
 WPC is a wallpaper changer for Windows/Linux. 
 
-*optionally*, It can retrieve wallpapers from [Wallheaven.cc](https://wallhaven.cc/) and [Bing.com](https://www.bing.com/).  
+*optionally*, It can retrieve wallpapers from [wallhaven.cc](https://wallhaven.cc/) and [Bing.com](https://www.bing.com/).  
   
 # Usage  
   
@@ -28,7 +28,7 @@ FLAGS:
     -o, --only          Only use remotely downloaded wallpapers.
     -S, --startup       start WPC at startup.
     -V, --version       Prints version information
-    -w, --wallheaven    wallheaven.cc
+    -w, --wallhaven    wallhaven.cc
 
 OPTIONS:
     -d, --directory <directory>    directory of wallpapers.
@@ -68,9 +68,9 @@ The above command will change wallpaper(that are located at `-d`) every 60 secon
 
 ---
 
-# Wallheaven API
+# wallhaven API
 
-Complete [wallheaven API](https://wallhaven.cc/help/api) is implemented in [api/wallheaven.rs](src/web/wallheaven_api.rs)
+Complete [wallhaven API](https://wallhaven.cc/help/api) is implemented in [api/wallhaven.rs](src/web/wallhaven_api.rs)
 
 # Building  
 

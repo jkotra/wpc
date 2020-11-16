@@ -5,7 +5,7 @@ use std::collections::HashMap;
 
 // https://wallhaven.cc/help/api#wallpapers
 #[allow(dead_code)]
-pub fn wallheaven_wallpaperinfo(apikey: &str, id: &str) -> Result<serde_json::value::Value, Box<dyn std::error::Error>> {
+pub fn wallhaven_wallpaperinfo(apikey: &str, id: &str) -> Result<serde_json::value::Value, Box<dyn std::error::Error>> {
     let url = format!("https://wallhaven.cc/api/v1/w/{id}?apikey={apikey}", apikey=apikey, id=id);
     let resp = reqwest::blocking::get(&url).expect("Unable to make GET request!")
         .text()?;
@@ -17,7 +17,7 @@ pub fn wallheaven_wallpaperinfo(apikey: &str, id: &str) -> Result<serde_json::va
 
 // https://wallhaven.cc/help/api#search
 #[allow(dead_code)]
-pub fn wallheaven_search(apikey: &str, query: HashMap<&str, &str>) -> Result<Value, Box<dyn std::error::Error>> {
+pub fn wallhaven_search(apikey: &str, query: HashMap<&str, &str>) -> Result<Value, Box<dyn std::error::Error>> {
 
     let mut base = format!("https://wallhaven.cc/api/v1/search?apikey={apikey}&", apikey=apikey);
     for (k,v) in query{
@@ -34,7 +34,7 @@ pub fn wallheaven_search(apikey: &str, query: HashMap<&str, &str>) -> Result<Val
 
 // https://wallhaven.cc/help/api#tags
 #[allow(dead_code)]
-pub fn wallheaven_taginfo(id: &str) -> Result<Value, Box<dyn std::error::Error>> {
+pub fn wallhaven_taginfo(id: &str) -> Result<Value, Box<dyn std::error::Error>> {
     let url = format!("https://wallhaven.cc/api/v1/tag/{id}", id=id);
 
     let resp = reqwest::blocking::get(&url).expect("Unable to make GET request!")
@@ -47,7 +47,7 @@ pub fn wallheaven_taginfo(id: &str) -> Result<Value, Box<dyn std::error::Error>>
 
 // https://wallhaven.cc/help/api#user-settings
 #[allow(dead_code)]
-pub fn wallheaven_usersettings(apikey: &str) -> Result<Value, Box<dyn std::error::Error>> {
+pub fn wallhaven_usersettings(apikey: &str) -> Result<Value, Box<dyn std::error::Error>> {
     let url = format!("https://wallhaven.cc/api/v1/settings?apikey={apikey}", apikey=apikey);
 
     let resp = reqwest::blocking::get(&url).expect("Unable to make GET request!")
@@ -60,7 +60,7 @@ pub fn wallheaven_usersettings(apikey: &str) -> Result<Value, Box<dyn std::error
 
 // https://wallhaven.cc/help/api#user-settings
 #[allow(dead_code)]
-pub fn wallheaven_getid(apikey: &str) -> Result<serde_json::value::Value, Box<dyn std::error::Error>> {
+pub fn wallhaven_getid(apikey: &str) -> Result<serde_json::value::Value, Box<dyn std::error::Error>> {
     let url = format!("https://wallhaven.cc/api/v1/collections?apikey={apik}", apik=apikey);
 
     let resp = reqwest::blocking::get(&url).expect("Unable to make GET request!")
@@ -74,7 +74,7 @@ pub fn wallheaven_getid(apikey: &str) -> Result<serde_json::value::Value, Box<dy
 
 // https://wallhaven.cc/help/api#user-settings - 2
 #[allow(dead_code)]
-pub fn wallheaven_getcoll(username: &str, collid: i64) -> Result<serde_json::value::Value, Box<dyn std::error::Error>> {
+pub fn wallhaven_getcoll(username: &str, collid: i64) -> Result<serde_json::value::Value, Box<dyn std::error::Error>> {
     let url = format!("https://wallhaven.cc/api/v1/collections/{username}/{collid}", username=username, collid=collid);
 
     let resp = reqwest::blocking::get(&url).expect("Unable to make GET request!")
