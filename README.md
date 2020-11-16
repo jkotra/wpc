@@ -12,7 +12,7 @@ WPC is a wallpaper changer for Windows/Linux.
   
 ```
 
-WPC 0.7.0
+WPC 0.7.1
 Jagadeesh K. <jagadeesh@stdin.top>
 Wallpaper changer for Windows/Linux
 
@@ -28,13 +28,13 @@ FLAGS:
     -o, --only          Only use remotely downloaded wallpapers.
     -S, --startup       start WPC at startup.
     -V, --version       Prints version information
-    -w, --wallhaven    wallhaven.cc
+    -w, --wallhaven     wallhaven.cc
 
 OPTIONS:
     -d, --directory <directory>    directory of wallpapers.
-    -i, --interval <interval>      interval in Secs. [default: 60]
+    -i, --interval <interval>      interval in Secs. [default: 300]
         --maxage <maxage>          maximum age of wallpaper in hrs. [default: -1]
-    -u, --update <update>          Update interval in Secs. [default: 120]
+    -u, --update <update>          Update interval in Secs. [default: 3600]
 
 
  ```
