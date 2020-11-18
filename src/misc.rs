@@ -53,7 +53,7 @@ pub fn run_in_background(){
     .expect("Child process failed to start.");
 }
 
-pub fn download_wallpapers(urls: Vec<String>, savepath: &str, bing: bool) -> Vec<String> {
+pub async fn download_wallpapers(urls: Vec<String>, savepath: &str, bing: bool) -> Vec<String> {
     let mut remote_files: Vec<String> = vec![];
 
     for url in urls{
@@ -74,26 +74,46 @@ pub fn download_wallpapers(urls: Vec<String>, savepath: &str, bing: bool) -> Vec
 
             if filename.len() == 0 { panic!("Filename empty!") }
             else { 
-                let res = download(url.as_str(), &filename);
-                if res.is_err() {
-                    panic!("cannot download url!")
+                let filedest = PathBuf::from(&filename);
+                if filedest.exists(){
+                    continue
+                }            
+                match async_download(url.as_str(), &filename).await{
+                    Ok(_) => (),
+                    Err(why) => panic!("Error: {:?}", why)
                 }
-             }
+            }
 
     }
 
     return remote_files;
 }
 
-pub fn download(url: &str, filename: &str) -> Result<(), Box<dyn std::error::Error>> {
+async fn async_download(url: &str, filename: &str) -> Result<bool, String> {
 
     let filedest = PathBuf::from(filename);
-    if filedest.exists(){
-        return Ok(())
-    }
+    let response = match reqwest::get(url).await{
+        Ok(f) => f,
+        Err(why) => panic!(why)
+    };
+
+    let mut out = File::create(filedest).expect("failed to create file");
+    let content = match response.bytes().await{
+        Ok(f) => f,
+        Err(why) => panic!(why)
+    };
+
+    let mut content = std::io::Cursor::new(content);
+    io::copy(&mut content, &mut out).expect("failed to copy content");
+
+    return Ok(true)
+}
+
+#[allow(dead_code)]
+pub fn download(url: &str, filename: &str) -> Result<(), Box<dyn std::error::Error>> {
 
     let mut response = reqwest::blocking::get(url).expect("Cannot download!");
-    let mut out = File::create(filedest).expect("failed to create file");
+    let mut out = File::create(filename).expect("failed to create file");
     io::copy(&mut response, &mut out).expect("failed to copy content");
     Ok(())
 }
