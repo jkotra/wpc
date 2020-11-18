@@ -30,7 +30,8 @@ mod misc;
 //this struct will be used to store wallhaven credentials.
 struct WhCreds {
         username: String,
-        coll_id: i64
+        coll_id: i64,
+        api_key: String
 }
 
 // this struct will be used to update images.
@@ -45,8 +46,8 @@ struct WpcUpdateParams{
     savepath: String,
 }
 
-
-fn main() {
+#[tokio::main]
+async fn main() {
 
     let yaml = load_yaml!("cli.yml");
     let matches = App::from_yaml(yaml).get_matches();
@@ -109,7 +110,7 @@ fn main() {
     }
 
 
-    let mut whcreds: WhCreds = WhCreds { username: String::from("None"), coll_id: -1 };
+    let mut whcreds: WhCreds = WhCreds { username: String::from("None"), coll_id: -1, api_key: String::from("None") };
 
         if wallhaven_flag {
 
@@ -119,6 +120,7 @@ fn main() {
                 // ask user for username and coll_id
                 let mut wh_username = String::new();
                 let mut wh_coll_id = String::new();
+                let mut wh_api_key = String::new();
 
                 println!("\nwallhaven.cc Username:");
                 std::io::stdin().read_line(&mut wh_username).unwrap();
@@ -126,15 +128,19 @@ fn main() {
                 println!("\nwallhaven.cc Collection ID:");
                 std::io::stdin().read_line(&mut wh_coll_id).unwrap();
 
+                println!("\nwallhaven.cc API key (not required for public collection) (Get API key from https://wallhaven.cc/settings/account):");
+                std::io::stdin().read_line(&mut wh_api_key).unwrap();
+
                 //remove \n \r
                 wh_username = wh_username.replace("\n", "").replace("\r", "");
                 wh_coll_id = wh_coll_id.replace("\n", "").replace("\r", "");
+                wh_api_key = wh_api_key.replace("\n", "").replace("\r", "");
 
                 //convert wh_coll_id to int64
                 let wh_coll_id = wh_coll_id.parse::<i64>().unwrap();
 
                 // save user input to json
-                let creds = json!({"wh_username": &wh_username, "wh_coll_id": wh_coll_id });
+                let creds = json!({"wh_username": &wh_username, "wh_coll_id": wh_coll_id, "wh_api_key": wh_api_key });
 
                 let wh_json_file = match File::create("wallhaven.json"){
                     Ok(file) => file,
@@ -158,7 +164,8 @@ fn main() {
             let wh_json: Value = serde_json::from_str(&f).unwrap();
 
             whcreds.username = wh_json["wh_username"].as_str().unwrap().to_string();
-            whcreds.coll_id = wh_json["wh_coll_id"].as_i64().unwrap()
+            whcreds.coll_id = wh_json["wh_coll_id"].as_i64().unwrap();
+            whcreds.api_key = wh_json["wh_api_key"].as_str().unwrap().to_string();
         }
 
 
@@ -197,7 +204,7 @@ fn main() {
     }
 
     //initial
-    let mut file_list = update_files(wpc_up.as_ref()).unwrap();
+    let mut file_list = update_files(wpc_up.as_ref()).await.unwrap();
     change_wallpaper(debug, &file_list);
 
 
@@ -211,14 +218,14 @@ fn main() {
 
             if debug { println!("[DEBUG] Update interval: {} elapsed: {}", user_update_interval, time_since.elapsed().as_secs()) }
             if time_since.elapsed().as_secs() >= user_update_interval{
-                file_list = update_files(wpc_up.as_ref()).unwrap();
+                file_list = update_files(wpc_up.as_ref()).await.unwrap();
                 time_since = std::time::Instant::now();
             }
         }
     }
 
 
-fn update_files(params: &WpcUpdateParams) -> Result<Vec<String>, std::io::Error> {
+async fn update_files(params: &WpcUpdateParams) -> Result<Vec<String>, std::io::Error> {
 
     let mut file_list = Vec::new();
 
@@ -231,7 +238,7 @@ fn update_files(params: &WpcUpdateParams) -> Result<Vec<String>, std::io::Error>
 
     if params.bing{
 
-        for file in download_wallpapers(get_bing(), &params.savepath, true){
+        for file in download_wallpapers(get_bing(), &params.savepath, true).await{
 
             file_list.push(file);
         }
@@ -244,7 +251,7 @@ fn update_files(params: &WpcUpdateParams) -> Result<Vec<String>, std::io::Error>
 
     if params.wallhaven{
 
-        for file in download_wallpapers(get_wallhaven(params.wallhaven_creds.coll_id, &params.wallhaven_creds.username), &params.savepath, false){
+        for file in download_wallpapers(get_wallhaven(params.wallhaven_creds.coll_id, &params.wallhaven_creds.username, &params.wallhaven_creds.api_key), &params.savepath, false).await{
             file_list.push(file)
         }
 
@@ -267,11 +274,19 @@ fn get_bing() -> Vec<String> {
     return vec![bing]
 }
 
-fn get_wallhaven(collid: i64, username: &str) -> Vec<String> {
-    let collection = wallhaven::wallhaven_getcoll(username, collid);
+fn get_wallhaven(collid: i64, username: &str, api_key: &str) -> Vec<String> {
+    
+    let collection: serde_json::value::Value;
+
+    if api_key.contains("None"){
+        collection = wallhaven::wallhaven_getcoll(username, collid).unwrap();
+    }else{
+        collection = wallhaven::wallhaven_getcoll_api(username, collid, api_key).unwrap();
+    }
+    
     let mut coll_urls: Vec<String> = vec![];
 
-    for x in collection.unwrap()["data"].as_array() {
+    for x in collection["data"].as_array() {
         for y in x {
             coll_urls.push(y["path"].as_str().unwrap().to_string())
         }

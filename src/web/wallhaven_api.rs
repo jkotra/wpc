@@ -84,3 +84,15 @@ pub fn wallhaven_getcoll(username: &str, collid: i64) -> Result<serde_json::valu
 
     Ok(v)
 }
+
+#[allow(dead_code)]
+pub fn wallhaven_getcoll_api(username: &str, collid: i64, api_key: &str) -> Result<serde_json::value::Value, Box<dyn std::error::Error>> {
+    let url = format!("https://wallhaven.cc/api/v1/collections/{username}/{collid}?apikey={apik}", username=username, collid=collid, apik=api_key);
+
+    let resp = reqwest::blocking::get(&url).expect("Unable to make GET request!")
+        .text()?;
+    let v: Value = serde_json::from_str(&resp)
+        .expect("Cannot Decode JSON Data!");
+
+    Ok(v)
+}
