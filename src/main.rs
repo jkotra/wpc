@@ -111,11 +111,15 @@ async fn main() {
 
 
     let mut whcreds: WhCreds = WhCreds { username: String::from("None"), coll_id: -1, api_key: String::from("None") };
+    let mut wpc_dir = std::env::current_exe().unwrap();
+    wpc_dir.pop(); //remove wpc.exe from dir.
+
+    let wh_json_path = format!("{}/wallhaven.json", wpc_dir.to_str().unwrap());
 
         if wallhaven_flag {
 
             // check if file wallhaven.json exists in CWD.
-            if !Path::new("wallhaven.json").exists() {
+            if !Path::new(&wh_json_path).exists() {
 
                 // ask user for username and coll_id
                 let mut wh_username = String::new();
@@ -156,7 +160,7 @@ async fn main() {
 
 
             // read wallhaven.json
-            let f = match fs::read_to_string("wallhaven.json"){
+            let f = match fs::read_to_string(&wh_json_path){
                 Ok(f) => f,
                 Err(why) => panic!("cannot read config: {:?}", why),
             };
