@@ -59,7 +59,16 @@ async fn main() {
 
     let debug = matches.occurrences_of("debug") != 0;
     let mut time_since = std::time::Instant::now();
-    let savepath = matches.value_of("directory").unwrap();
+    
+    let savepath: String;
+    let _savepath = matches.value_of("directory").unwrap();
+    if _savepath.eq_ignore_ascii_case("."){
+        savepath = String::from(std::env::current_dir().unwrap().to_str().unwrap());
+    }
+    else{
+        savepath = String::from(_savepath)
+    }
+
     let mut local_flag = matches.is_present("local");
     let bing_flag = matches.is_present("bing");
     let wallhaven_flag = matches.is_present("wallhaven");
@@ -84,7 +93,7 @@ async fn main() {
         }
         else {
             if debug {
-                print_debug_msg("GNOME Distro detected!");
+                print_debug_msg("GNOME DE detected!");
             }
         }
     }
@@ -172,7 +181,8 @@ async fn main() {
             whcreds.api_key = wh_json["wh_api_key"].as_str().unwrap().to_string();
         }
 
-
+        
+        
         let wpc_up: WpcUpdateParams = WpcUpdateParams {
             bing: bing_flag,
             wallhaven: wallhaven_flag,
@@ -181,8 +191,10 @@ async fn main() {
             debug: debug,
             wallhaven_creds: whcreds,
             maxage: matches.value_of("maxage").unwrap().parse::<i64>().unwrap(),
-            savepath: savepath.to_string()
+            savepath: savepath
         };
+
+
 
     let wpc_up = Box::new(wpc_up);
 
@@ -226,8 +238,6 @@ async fn main() {
                 time_since = std::time::Instant::now();
             }
         }
-
-        //Ok(())
 
     }
 
@@ -285,11 +295,16 @@ fn get_wallhaven(collid: i64, username: &str, api_key: &str) -> Vec<String> {
     
     let collection: serde_json::value::Value;
 
-    if api_key.contains("None"){
-        collection = wallhaven::wallhaven_getcoll(username, collid).unwrap();
-    }else{
-        collection = wallhaven::wallhaven_getcoll_api(username, collid, api_key).unwrap();
+    loop {
+
+    collection = match wallhaven::wallhaven_getcoll_api(username, collid, api_key) {
+        Ok(c) => c,
+        Err(c) => { println!(":{:?}", c ); wait(5); continue }
+    };
+
+    break;
     }
+
     
     let mut coll_urls: Vec<String> = vec![];
 

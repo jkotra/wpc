@@ -1345,7 +1345,7 @@ dependencies = [
 
 [[package]]
 name = "wpc"
-version = "0.7.3"
+version = "0.7.5"
 dependencies = [
  "chrono",
  "clap",
