@@ -75,7 +75,7 @@ pub async fn download_wallpapers(urls: Vec<String>, savepath: &str, bing: bool) 
             if filename.len() == 0 { panic!("Filename empty!") }
             else { 
                 let filedest = PathBuf::from(&filename);
-                if filedest.exists(){
+                if filedest.exists() && !bing{
                     continue
                 }            
                 match async_download(url.as_str(), &filename).await{
