@@ -29,6 +29,14 @@ pub fn get_wpc_args() -> Vec<String> {
         else if args[i] == "--debug" { args.remove(i); }
         else if args[i] == "-D" { args.remove(i); }
         else if args[i] == "--background" { args.remove(i); }
+        else if args[i] == "-d" || args[i] == "--directory"{
+            if args[i+1] == "."{
+
+                args[i+1] = String::from(std::env::current_dir().unwrap().to_str().unwrap())
+
+            }
+
+        }
     }
 
     return args;
