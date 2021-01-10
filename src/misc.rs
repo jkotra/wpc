@@ -11,8 +11,22 @@ use std::env::current_exe;
 use std::os::windows::process::CommandExt;
 
 
-pub fn print_debug_msg(content: &str) {
-    println!("[DEBUG {:?}]: {}", chrono::offset::Local::now(), content)
+pub struct WPCDebug{
+    pub is_debug: bool
+}
+
+impl WPCDebug{
+
+    pub fn debug(&self, message: String){
+        if !self.is_debug { return }
+        println!("[DEBUG {:?}]: {}", chrono::offset::Local::now(), message)
+    }
+
+    pub fn info(&self, message: String){
+        if !self.is_debug { return }
+        println!("[INFO {:?}]: {}", chrono::offset::Local::now(), message)
+    }
+
 }
 
 pub fn wait(sec: u64) {
