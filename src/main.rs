@@ -29,6 +29,7 @@ mod windows;
 #[path = "web/bing_wpod.rs"]
 mod bing;
 
+
 #[path = "web/wallhaven_api.rs"]
 mod wallhaven;
 
@@ -40,15 +41,17 @@ struct WallHaven {
 }
 
 impl WallHaven {
-    async fn update(&self, savepath: &str, maxage: i64) -> Vec<String> {
+    async fn update(&self, savepath: &str, maxage: i64, wpc_debug: &WPCDebug) -> Vec<String> {
 
-        let wallpaper_links = self.get_collection();
-        let files = download_wallpapers(wallpaper_links, &savepath, false).await;
-        let files = misc::update_file_list(savepath, maxage); 
+        let wallpaper_links = self.get_collection(wpc_debug);
+        let mut files = download_wallpapers(wallpaper_links, &savepath, wpc_debug).await; 
+        if maxage != -1 {
+            files = misc::maxage_filter(files.clone(), maxage, &wpc_debug); 
+        }
         return files;
     }
 
-    fn get_collection(&self) -> Vec<String> {
+    fn get_collection(&self, wpc_debug: &WPCDebug) -> Vec<String> {
         let collection: serde_json::value::Value;
 
         loop {
@@ -70,33 +73,20 @@ impl WallHaven {
                 coll_urls.push(y["path"].as_str().unwrap().to_string())
             }
         }
+
+        wpc_debug.debug(
+            format!("links parsed from collection ID {} = {:?}", self.coll_id, coll_urls)
+        );
+
         return coll_urls;
     }
 
-}
-
-fn change_wallpaper_random(file_list: &Vec<String>, wpc_debug: &WPCDebug) {
-    //print random number to user if debug enabled.
-    let rand_n = random_n(file_list.len());
-    let wp = file_list.get(rand_n).unwrap();
-    wpc_debug.debug(String::from(wp));
-
-    #[cfg(target_os = "linux")]
-    gnome::change_wallpaper_gnome(wp);
-
-    #[cfg(target_os = "windows")]
-    windows::set_wallpaper_win(wp);
 }
 
 #[tokio::main]
 async fn main() {
     let yaml = load_yaml!("cli.yml");
     let matches = App::from_yaml(yaml).get_matches();
-
-    if matches.is_present("background") {
-        misc::run_in_background();
-        std::process::exit(0);
-    }
 
     let is_debug = matches.occurrences_of("debug") != 0;
     let main_debug = WPCDebug { is_debug: is_debug };
@@ -112,24 +102,34 @@ async fn main() {
     }
     let savepath = &savepath;
 
-    let mut local_flag = matches.is_present("local");
+    let mut local_flag = true;
     let bing_flag = matches.is_present("bing");
-    let wallhaven_flag = matches.is_present("wallhaven");
+    let mut wallhaven_flag = matches.is_present("wallhaven");
     let mut user_interval = matches
         .value_of("interval")
         .unwrap()
         .parse::<u64>()
         .unwrap();
     let mut user_update_interval = matches.value_of("update").unwrap().parse::<u64>().unwrap();
+    
 
-    if !local_flag && !bing_flag && !wallhaven_flag {
-        local_flag = true;
-    }
-
-    //if --only flag, disable local
-    if matches.is_present("only") {
+    //defaults to local if there are no flags.
+    if bing_flag || wallhaven_flag {
         local_flag = false;
     }
+
+    if bing_flag{
+        wallhaven_flag = false;
+        local_flag = false;
+
+        user_update_interval = 60 * 60 * 24;
+        user_interval = 60 * 60 * 24;
+    }
+
+    main_debug.debug(
+        format!("local={}, wallhaven={}, bing={}", local_flag, wallhaven_flag, bing_flag)
+    );
+
 
     if cfg!(linux) {
         if !misc::is_linux_gnome_de() {
@@ -145,12 +145,11 @@ async fn main() {
         windows::add_to_startup_reg();
     }
 
-    //if only arg is bing WPOD
-    if bing_flag && !wallhaven_flag && !local_flag {
-        // set interval and update interval to 24 hrs
-        user_update_interval = 60 * 60 * 24;
-        user_interval = 60 * 60 * 24;
+    if matches.is_present("background") {
+        misc::run_in_background(&main_debug);
+        std::process::exit(0);
     }
+
 
     let mut wallhaven_cc = WallHaven {
         ..Default::default()
@@ -162,45 +161,42 @@ async fn main() {
     }
 
     let mut candidates: Vec<String> = Vec::new();
-    candidates = update_local_files(&savepath, maxage, &main_debug);
 
-    if candidates.len() == 0{
-        if !wallhaven_flag && !bing_flag{
-            panic!("No Images found in {}", savepath)
-        }
-        else if wallhaven_flag{
-            candidates = wallhaven_cc.update(savepath, maxage).await
+    while candidates.len() == 0{
+        if wallhaven_flag{
+            candidates = wallhaven_cc.update(savepath, maxage, &main_debug).await
         }
         else if bing_flag{
-            candidates = bing::get_bing();
+            candidates = bing::get_bing_wpod().await;
+            candidates = download_wallpapers(candidates.clone(), savepath, &main_debug).await;
+        }
+        else if local_flag{
+            candidates = update_local_files(savepath, maxage, &main_debug);
         }
         else{
             panic!("Unknown arg. configuration!")
         }
     }
-
+    
+    // main loops, deals with waiting interval and updates.
     loop {
 
         //change wallpaper 
-        change_wallpaper_random(candidates.as_ref(), &main_debug);
-
+        change_wallpaper_random(&candidates, &main_debug);
 
         wait(user_interval);
-
+        main_debug.debug(
+            format!("u = {} elapsed = {}", user_update_interval, time_since.elapsed().as_secs())
+        );
 
         if time_since.elapsed().as_secs() >= user_update_interval {
             if local_flag {
                 candidates = update_local_files(savepath,
-                                                maxage,
-                                                &main_debug);
+                                                maxage, &main_debug);
             }
 
             if wallhaven_flag {
-                candidates = wallhaven_cc.update(savepath, maxage).await;
-            }
-
-            if bing_flag {
-                candidates = bing::get_bing();
+                candidates = wallhaven_cc.update(savepath, maxage, &main_debug).await;
             }
 
             time_since = std::time::Instant::now();
@@ -208,10 +204,26 @@ async fn main() {
     }
 }
 
-fn update_local_files(savepath: &str, max_age: i64, debug: &WPCDebug) -> Vec<String> {
+fn change_wallpaper_random(file_list: &Vec<String>, wpc_debug: &WPCDebug) {
+    //print random number to user if debug enabled.
+    let rand_n = random_n(file_list.len());
+    let wp = file_list.get(rand_n).unwrap();
+    
+    wpc_debug.debug(format!("Total = {} rand_n = {}", file_list.len(), rand_n));
+    wpc_debug.info(String::from(wp));
+
+
+    #[cfg(target_os = "linux")]
+    gnome::change_wallpaper_gnome(wp);
+
+    #[cfg(target_os = "windows")]
+    windows::set_wallpaper_win(wp);
+}
+
+fn update_local_files(savepath: &str, max_age: i64, wpc_debug: &WPCDebug) -> Vec<String> {
     let mut file_list: Vec<String> = Vec::new();
 
-    for file in misc::update_file_list(savepath, max_age) {
+    for file in misc::update_file_list(savepath, max_age, wpc_debug) {
         file_list.push(file);
     }
 

@@ -11,16 +11,16 @@ args:
         takes_value: true
 
     - local:
-          short: l
-          long: local
-          help: Offline Mode.
-          takes_value: false
+        short: l
+        long: local
+        help: Offline Mode.
+        takes_value: false
 
     - bing:
-          short: b
-          long: bing
-          help: Bing Wallpaper of the Day.
-          takes_value: false
+        short: b
+        long: bing
+        help: Bing Wallpaper of the Day.
+        takes_value: false
 
     - wallhaven:
         short: w
@@ -29,24 +29,18 @@ args:
         takes_value: false
 
     - interval:
-          short: i
-          long: interval
-          help: interval in Secs.
-          default_value: "300"
-          takes_value: true
+        short: i
+        long: interval
+        help: interval in Secs.
+        default_value: "300"
+        takes_value: true
 
     - update:
-          short: u
-          long: update
-          help: Update interval in Secs.
-          default_value: "3600"
-          takes_value: true
-
-    - only:
-        short: o
-        long: only
-        help: Only use remotely downloaded wallpapers.
-        takes_value: false
+        short: u
+        long: update
+        help: Update interval in Secs.
+        default_value: "3600"
+        takes_value: true
 
     - background:
         long: background
