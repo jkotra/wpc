@@ -179,7 +179,7 @@ pub fn clean_gs(dirpath: &str) {
         let fp = file.unwrap().path().to_str().unwrap().to_string();
 
         if fp.contains("_!wpc_gs_transorm!."){
-            std::fs::remove_file(fp);
+            let _ = std::fs::remove_file(fp);
         }
     }
 }
