@@ -8,6 +8,7 @@ use serde_json;
 use serde_json::{json, Value};
 
 use clap::App;
+use image;
 
 #[allow(unused_imports)]
 use crate::misc::{download_wallpapers, is_linux_gnome_de, random_n, wait, WPCDebug};
@@ -88,6 +89,9 @@ async fn main() {
     let yaml = load_yaml!("cli.yml");
     let matches = App::from_yaml(yaml).get_matches();
 
+    
+    let mut is_gs = matches.occurrences_of("grayscale") != 0;
+    
     let is_debug = matches.occurrences_of("debug") != 0;
     let main_debug = WPCDebug { is_debug: is_debug };
 
@@ -130,6 +134,10 @@ async fn main() {
         format!("local={}, wallhaven={}, bing={}", local_flag, wallhaven_flag, bing_flag)
     );
 
+    let is_gs_rm = matches.occurrences_of("rm-grayscale-files") != 0;
+    if is_gs_rm{ 
+        misc::clean_gs(savepath);
+        is_gs = false }
 
     if cfg!(linux) {
         if !misc::is_linux_gnome_de() {
@@ -182,7 +190,7 @@ async fn main() {
     loop {
 
         //change wallpaper 
-        change_wallpaper_random(&candidates, &main_debug);
+        change_wallpaper_random(&candidates, is_gs, &main_debug);
 
         wait(user_interval);
         main_debug.debug(
@@ -204,14 +212,49 @@ async fn main() {
     }
 }
 
-fn change_wallpaper_random(file_list: &Vec<String>, wpc_debug: &WPCDebug) {
+fn change_wallpaper_random(file_list: &Vec<String>, gs: bool, wpc_debug: &WPCDebug) {
     //print random number to user if debug enabled.
     let rand_n = random_n(file_list.len());
     let wp = file_list.get(rand_n).unwrap();
+
+    let mut wp_to_set = std::path::PathBuf::from(&wp);
+
+    let wp_filename: Vec<&str> = wp.split("/").collect();
+    let wp_filename = wp_filename[(wp_filename.len() - 1) as usize];
+    let wp_ext: Vec<&str> = wp_filename.split(".").collect();
+    let wp_ext = wp_ext[(wp_ext.len() - 1) as usize ];
+    
+
     
     wpc_debug.debug(format!("Total = {} rand_n = {}", file_list.len(), rand_n));
-    wpc_debug.info(String::from(wp));
+    
 
+    if gs{
+        
+        let mut wp_pbuf_gs = wp_to_set.clone();
+        wp_pbuf_gs.pop();
+        wp_pbuf_gs.push(String::from(wp_filename) + "_!wpc_gs_transorm!." + wp_ext);
+
+        if !wp_pbuf_gs.exists(){
+            //open
+            let img = image::open(wp).unwrap();
+
+            //convert to grayscale
+            let img = image::imageops::grayscale(&img);
+
+            //save
+            img.save(wp_pbuf_gs.to_str().unwrap()).unwrap();
+        }
+
+        wpc_debug.debug(format!("GrayScale Image = {}", wp_pbuf_gs.to_str().unwrap()));
+        wp_to_set = wp_pbuf_gs.clone();
+
+    }
+        
+    
+    let wp =  wp_to_set.to_str().unwrap();
+
+    wpc_debug.info(String::from(wp));
 
     #[cfg(target_os = "linux")]
     gnome::change_wallpaper_gnome(wp);
