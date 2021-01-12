@@ -205,3 +205,26 @@ pub fn is_linux_gnome_de() -> bool {
     if res == "budgie-desktop".to_string() { return true } //budgie
     return false;
 }
+
+
+#[cfg(test)]
+mod bing {
+
+    #[tokio::test]
+    async fn async_download_test() {
+
+        let mut url = vec![];
+        url.push(
+            String::from("https://upload.wikimedia.org/wikipedia/commons/thumb/8/80/Wikipedia-logo-v2.svg/1024px-Wikipedia-logo-v2.svg.png")
+    ); 
+        let debug = super::WPCDebug { is_debug: true };
+
+        let files = super::download_wallpapers(url, "./target/debug", &debug).await;
+        println!("{:?}", files);
+        assert_eq!(files.len(), 1 as usize);
+        
+        let test_file_path = std::path::PathBuf::from(&files[0]);
+        assert_eq!(test_file_path.exists(), true);
+    }
+
+}

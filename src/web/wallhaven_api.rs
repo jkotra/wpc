@@ -115,3 +115,23 @@ pub fn wallhaven_getcoll_api(username: &str, collid: i64, api_key: &str) -> Resu
 
     Ok(v)
 }
+
+#[cfg(test)]
+mod wallhaven_api {
+
+    #[test]
+    fn wh_wallpaper() {
+        let wp_info = super::wallhaven_wallpaperinfo("", "q6jvjl").unwrap();
+        println!("{:?}", wp_info);
+        let x = format!("{}", wp_info["data"]["dimension_x"]);
+        let y = format!("{}", wp_info["data"]["dimension_y"]);
+        assert_eq!(x, "1920");
+        assert_eq!(y, "1080");
+    }
+    
+    #[test]
+    fn wh_getcoll() {
+        let wh_coll = super::wallhaven_getcoll_api("th4n0s", 803855, ""); 
+    }
+
+}

@@ -21,3 +21,15 @@ pub async fn get_bing_wpod() -> Vec<String> {
 
     return url_vec;
 }
+
+#[cfg(test)]
+mod bing {
+
+    #[tokio::test]
+    async fn bing_download_wallpaper() {
+
+        let url = super::get_bing_wpod().await;
+        assert_eq!(url.len(), 1 as usize)
+    }
+
+}

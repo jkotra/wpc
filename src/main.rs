@@ -282,3 +282,12 @@ fn wallhaven_read_json() -> WallHaven {
 
     return wh;
 }
+
+
+#[cfg(test)]
+mod main {
+    #[test]
+    fn it_works() {
+        assert_eq!(2 + 2, 4);
+    }
+}
