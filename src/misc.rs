@@ -88,7 +88,10 @@ pub async fn download_wallpapers(urls: Vec<String>, savepath: &str, wpc_debug: &
             file_vec = url.split("/").collect();
             
 
-            let filename = format!("{}/{}", savepath, file_vec[file_vec.len() - 1]);
+            let mut filename = format!("{}/{}", savepath, file_vec[file_vec.len() - 1]);
+            if url.contains("bing.com"){
+                filename = format!("{}/bing_pwod.jpeg", savepath);
+            }
 
             remote_files.push(filename.clone());
             let filedest = PathBuf::from(&filename);
