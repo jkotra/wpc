@@ -220,7 +220,6 @@ mod bing {
         let debug = super::WPCDebug { is_debug: true };
 
         let files = super::download_wallpapers(url, "./target/debug", &debug).await;
-        println!("{:?}", files);
         assert_eq!(files.len(), 1 as usize);
         
         let test_file_path = std::path::PathBuf::from(&files[0]);

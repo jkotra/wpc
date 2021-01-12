@@ -131,7 +131,8 @@ mod wallhaven_api {
     
     #[test]
     fn wh_getcoll() {
-        let wh_coll = super::wallhaven_getcoll_api("th4n0s", 803855, ""); 
+        let wh_coll = super::wallhaven_getcoll_api("th4n0s", 803855, "");
+        assert_eq!(wh_coll.is_err(), false); 
     }
 
 }
