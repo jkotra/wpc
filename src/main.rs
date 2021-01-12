@@ -75,7 +75,7 @@ impl WallHaven {
         }
 
         wpc_debug.debug(
-            format!("links parsed from collection ID {} = {:?}", self.coll_id, coll_urls)
+            format!("links parsed from collection ID {} = {} = {:?}", self.coll_id, coll_urls.len(), coll_urls)
         );
 
         return coll_urls;

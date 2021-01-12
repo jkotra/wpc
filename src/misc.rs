@@ -1,7 +1,6 @@
 use std::io;
 use std::fs::File;
 use std::path::PathBuf;
-
 extern crate rand;
 use rand::Rng;
 
@@ -150,33 +149,21 @@ pub fn update_file_list(dirpath: &str, maxage: i64, wpc_debug: &WPCDebug) -> Vec
 
     let files = std::fs::read_dir(dirpath).unwrap();
     let mut wallpapers: Vec<String> = vec![];
+    let mut file_list = vec![];
 
 
     for file in files {
         let fp = file.unwrap().path().to_str().unwrap().to_string();
+        file_list.push(fp)
+    }
 
-        //compute age diff and continue if older then max age!
-        if maxage != -1{
+    file_list = maxage_filter(file_list, maxage, wpc_debug);
 
-            //current time as timestamp
-            let maxage_time = chrono::Local::now().timestamp() - i64::from(maxage * 60 * 60);
+    for file in file_list{
 
-            //get created date and convert to timestamp.
-            let f_ct = std::fs::metadata(&fp).unwrap().created().unwrap().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs();
-
-            if maxage_time as u64 > f_ct{
-                wpc_debug.debug(
-                    format!("Skipped: {}", fp)
-                );
-
-                continue;
-            }
-
-        }
-
-        if fp.ends_with("png"){ wallpapers.push(fp) }
-        else if fp.ends_with("jpg") { wallpapers.push(fp) }
-        else if fp.ends_with("jpeg") { wallpapers.push(fp) }
+        if file.ends_with("png"){ wallpapers.push(file) }
+        else if file.ends_with("jpg") { wallpapers.push(file) }
+        else if file.ends_with("jpeg") { wallpapers.push(file) }
         else { continue }
     }
 
