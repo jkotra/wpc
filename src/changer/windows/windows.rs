@@ -10,6 +10,7 @@ use winapi::um::winuser::SPIF_SENDCHANGE;
 use winapi::um::winuser::SPIF_UPDATEINIFILE;
 use winapi::um::winuser::SPI_SETDESKWALLPAPER;
 
+extern crate::misc;
 
 pub fn set_wallpaper_win(path: &str) {
     let path = OsStr::new(path)
