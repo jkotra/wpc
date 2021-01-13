@@ -19,7 +19,7 @@
                     "kind": "bin"
                 }
             },
-            "args": ["-d", "/home/jojo/Pictures/wpc", "-D", "-i", "3"],
+            "args": ["-d", "/home/jojo/Pictures/wpc", "-D", "-i", "3", "-b"],
             "cwd": "${workspaceFolder}"
         },
         {

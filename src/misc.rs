@@ -87,7 +87,6 @@ pub async fn download_wallpapers(urls: Vec<String>, savepath: &str, wpc_debug: &
             file_vec = url.split("/").collect();
             
 
-            //let mut filename = format!("{}/{}", savepath, );
             let mut filename = PathBuf::from(savepath);
             filename = filename.join(file_vec[file_vec.len() - 1]);
 

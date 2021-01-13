@@ -27,6 +27,37 @@ args:
         long: wallhaven
         help: wallhaven.cc
         takes_value: false
+    
+    - reddit:
+        short: r
+        long: reddit
+        help: reddit.com subreddit
+        takes_value: true
+        default_value: "wallpaper"
+
+    - reddit-n:
+        long: reddit-n
+        help: no. of images to download from given subreddit.
+        takes_value: true
+        default_value: "1"
+    
+    - reddit-sort:
+        long: reddit-sort
+        help: Reddit.com sorting order. [ Hot, New, Top, Rising ]
+        takes_value: true
+        default_value: "hot" 
+    
+    - reddit-min-height:
+        long: reddit-min-height
+        help: Minimum height.
+        takes_value: true
+        default_value: "1080"
+    
+    - reddit-min-width:
+        long: reddit-min-width
+        help: Minimum width.
+        takes_value: true
+        default_value: "1920"
 
     - interval:
         short: i

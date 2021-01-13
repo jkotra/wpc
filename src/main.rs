@@ -4,6 +4,7 @@ extern crate clap;
 use clap::App;
 use image;
 
+
 #[allow(unused_imports)]
 use crate::misc::{download_wallpapers, is_linux_gnome_de, random_n, wait, WPCDebug};
 
@@ -29,6 +30,10 @@ use bing::Bing;
 mod wallhaven;
 use wallhaven::WallHaven;
 
+#[path = "web/reddit.rs"]
+mod reddit;
+use reddit::Reddit;
+
 #[tokio::main]
 async fn main() {
     let yaml = load_yaml!("cli.yml");
@@ -51,9 +56,11 @@ async fn main() {
     }
     let savepath = &savepath;
 
-    let mut local_flag = true;
+    let mut local_flag = false;
     let bing_flag = matches.is_present("bing");
     let mut wallhaven_flag = matches.is_present("wallhaven");
+    let mut reddit_flag = matches.occurrences_of("reddit") != 0;
+    
     let mut user_interval = matches
         .value_of("interval")
         .unwrap()
@@ -62,22 +69,20 @@ async fn main() {
     let mut user_update_interval = matches.value_of("update").unwrap().parse::<u64>().unwrap();
     
 
-    //defaults to local if there are no flags.
-    if bing_flag || wallhaven_flag {
-        local_flag = false;
-    }
-
-    if bing_flag{
+    
+    if bing_flag && !wallhaven_flag && !reddit_flag{
         wallhaven_flag = false;
         local_flag = false;
+        reddit_flag = false;
 
         user_update_interval = 60 * 60 * 24;
         user_interval = 60 * 60 * 24;
     }
 
-    main_debug.debug(
-        format!("local={}, wallhaven={}, bing={}", local_flag, wallhaven_flag, bing_flag)
-    );
+    if !wallhaven_flag && !bing_flag && !reddit_flag {
+        local_flag = true;
+    }
+
 
     let is_gs_rm = matches.occurrences_of("rm-grayscale-files") != 0;
     if is_gs_rm{ 
@@ -103,7 +108,7 @@ async fn main() {
         std::process::exit(0);
     }
 
-
+    /* setup wallhaven */
     let mut wallhaven_cc = WallHaven {
         ..Default::default()
     };
@@ -112,25 +117,48 @@ async fn main() {
         wallhaven_cc.init(savepath);
         wallhaven_cc = wallhaven_cc.read_json();
     }
+    /* END */
 
-    let mut candidates: Vec<String> = Vec::new();
+    /* setup reddit */
+
+    let reddit_com = Reddit{ subreddit: String::from(matches.value_of("reddit").unwrap()),
+                            n: matches.value_of("reddit-n").unwrap().parse::<i64>().unwrap(),
+                            cat: String::from(matches.value_of("reddit-sort").unwrap()),
+                            min_width: matches.value_of("reddit-min-width").unwrap().parse::<u32>().unwrap(),
+                            min_height: matches.value_of("reddit-min-height").unwrap().parse::<u32>().unwrap() };
+
+    /* end */
+    
+    
+    let mut candidates: Vec<String> = vec![];
 
     while candidates.len() == 0{
-        if wallhaven_flag{
-            candidates = wallhaven_cc.update(savepath, maxage, &main_debug).await
-        }
-        else if bing_flag{
-            candidates = Bing.update(savepath, &main_debug).await;
-        }
-        else if local_flag{
+
+        main_debug.debug(
+            format!("flags: local={}, wallhaven={}, bing={}, reddit={}", local_flag, wallhaven_flag, bing_flag, reddit_flag)
+        );
+
+        if local_flag{
             candidates = update_local_files(savepath, maxage, &main_debug);
         }
-        else{
-            panic!("Unknown arg. configuration!")
+
+        if wallhaven_flag{
+            let mut files = wallhaven_cc.update(savepath, maxage, &main_debug).await;
+            candidates.append(&mut files);
         }
+
+        if reddit_flag{
+            let mut files = reddit_com.update(savepath, maxage, &main_debug).await;
+            candidates.append(&mut files);
+        }
+
+        if bing_flag{
+            candidates = Bing.update(savepath, &main_debug).await;
+        }
+
     }
     
-    // main loops, deals with waiting interval and updates.
+    // main loop, deals with waiting interval and updates.
     loop {
 
         //change wallpaper 
@@ -142,17 +170,26 @@ async fn main() {
         );
 
         if time_since.elapsed().as_secs() >= user_update_interval {
+
+            let mut candidates: Vec<String> = vec![];
+            
             if local_flag {
                 candidates = update_local_files(savepath,
                                                 maxage, &main_debug);
             }
 
             if wallhaven_flag {
-                candidates = wallhaven_cc.update(savepath, maxage, &main_debug).await;
+                let mut files = wallhaven_cc.update(savepath, maxage, &main_debug).await;
+                candidates.append(&mut files);
             }
 
             if bing_flag{
                 candidates = Bing.update(savepath, &main_debug).await;
+            }
+
+            if reddit_flag{
+                let mut files = reddit_com.update(savepath, maxage, &main_debug).await;
+                candidates.append(&mut files);
             }
 
             time_since = std::time::Instant::now();
