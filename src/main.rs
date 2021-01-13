@@ -1,11 +1,5 @@
 #[macro_use]
 extern crate clap;
-use std::fs::File;
-use std::path::Path;
-
-// JSON read/write
-use serde_json;
-use serde_json::{json, Value};
 
 use clap::App;
 use image;
@@ -29,60 +23,11 @@ mod windows;
 
 #[path = "web/bing_wpod.rs"]
 mod bing;
-
+use bing::Bing;
 
 #[path = "web/wallhaven_api.rs"]
 mod wallhaven;
-
-#[derive(Default)]
-struct WallHaven {
-    username: String,
-    coll_id: i64,
-    api_key: String,
-}
-
-impl WallHaven {
-    async fn update(&self, savepath: &str, maxage: i64, wpc_debug: &WPCDebug) -> Vec<String> {
-
-        let wallpaper_links = self.get_collection(wpc_debug);
-        let mut files = download_wallpapers(wallpaper_links, &savepath, wpc_debug).await; 
-        if maxage != -1 {
-            files = misc::maxage_filter(files.clone(), maxage, &wpc_debug); 
-        }
-        return files;
-    }
-
-    fn get_collection(&self, wpc_debug: &WPCDebug) -> Vec<String> {
-        let collection: serde_json::value::Value;
-
-        loop {
-            collection = match wallhaven::wallhaven_getcoll_api(&self.username, self.coll_id, &self.api_key) {
-                Ok(c) => c,
-                Err(c) => {
-                    println!(":{:?}", c);
-                    wait(5);
-                    continue;
-                }
-            };
-            break;
-        }
-
-        let mut coll_urls: Vec<String> = vec![];
-
-        for x in collection["data"].as_array() {
-            for y in x {
-                coll_urls.push(y["path"].as_str().unwrap().to_string())
-            }
-        }
-
-        wpc_debug.debug(
-            format!("links parsed from collection ID {} = {} = {:?}", self.coll_id, coll_urls.len(), coll_urls)
-        );
-
-        return coll_urls;
-    }
-
-}
+use wallhaven::WallHaven;
 
 #[tokio::main]
 async fn main() {
@@ -164,8 +109,8 @@ async fn main() {
     };
 
     if wallhaven_flag {
-        wallhaven_init("wallhaven.json");
-        wallhaven_cc = wallhaven_read_json();
+        wallhaven_cc.init(savepath);
+        wallhaven_cc = wallhaven_cc.read_json();
     }
 
     let mut candidates: Vec<String> = Vec::new();
@@ -175,8 +120,7 @@ async fn main() {
             candidates = wallhaven_cc.update(savepath, maxage, &main_debug).await
         }
         else if bing_flag{
-            candidates = bing::get_bing_wpod().await;
-            candidates = download_wallpapers(candidates.clone(), savepath, &main_debug).await;
+            candidates = Bing.update(savepath, &main_debug).await;
         }
         else if local_flag{
             candidates = update_local_files(savepath, maxage, &main_debug);
@@ -207,6 +151,10 @@ async fn main() {
                 candidates = wallhaven_cc.update(savepath, maxage, &main_debug).await;
             }
 
+            if bing_flag{
+                candidates = Bing.update(savepath, &main_debug).await;
+            }
+
             time_since = std::time::Instant::now();
         }
     }
@@ -221,10 +169,10 @@ fn change_wallpaper_random(file_list: &Vec<String>, gs: bool, wpc_debug: &WPCDeb
 
     let wp_filename: Vec<&str> = wp.split("/").collect();
     let wp_filename = wp_filename[(wp_filename.len() - 1) as usize];
-    let wp_ext: Vec<&str> = wp_filename.split(".").collect();
-    let wp_ext = wp_ext[(wp_ext.len() - 1) as usize ];
-    
+    let mut wp_filename: Vec<&str> = wp_filename.split(".").collect();
 
+    let wp_ext = wp_filename.pop().unwrap();
+    let wp_name = wp_filename.join("");
     
     wpc_debug.debug(format!("Total = {} rand_n = {}", file_list.len(), rand_n));
     
@@ -233,7 +181,14 @@ fn change_wallpaper_random(file_list: &Vec<String>, gs: bool, wpc_debug: &WPCDeb
         
         let mut wp_pbuf_gs = wp_to_set.clone();
         wp_pbuf_gs.pop();
-        wp_pbuf_gs.push(String::from(wp_filename) + "_!wpc_gs_transorm!." + wp_ext);
+        wp_pbuf_gs.push("grayscale");
+
+        if !wp_pbuf_gs.exists(){
+            let _ = std::fs::create_dir(wp_pbuf_gs.to_str().unwrap());
+        }
+        
+        //push filename
+        wp_pbuf_gs.push(String::from(wp_name) + "_grayscale." + wp_ext);
 
         if !wp_pbuf_gs.exists(){
             //open
@@ -271,66 +226,4 @@ fn update_local_files(savepath: &str, max_age: i64, wpc_debug: &WPCDebug) -> Vec
     }
 
     return file_list;
-}
-
-fn wallhaven_init(wallhaven_json_path: &str) {
-    // check if file wallhaven.json exists in CWD.
-    if !Path::new(wallhaven_json_path).exists() {
-        // ask user for username and coll_id
-        let mut wh_username = String::new();
-        let mut wh_coll_id = String::new();
-        let mut wh_api_key = String::new();
-
-        println!("wallhaven.cc Username:");
-        std::io::stdin().read_line(&mut wh_username).unwrap();
-
-        println!("wallhaven.cc Collection ID:");
-        std::io::stdin().read_line(&mut wh_coll_id).unwrap();
-
-        println!("\nwallhaven.cc API key (not required for public collection) (Get API key from https://wallhaven.cc/settings/account):");
-        std::io::stdin().read_line(&mut wh_api_key).unwrap();
-
-        wh_username = wh_username.replace("\n", "").replace("\r", "");
-        wh_coll_id = wh_coll_id.replace("\n", "").replace("\r", "");
-        wh_api_key = wh_api_key.replace("\n", "").replace("\r", "");
-
-        //convert wh_coll_id to int64
-        let wh_coll_id = wh_coll_id.parse::<i64>().unwrap();
-
-        // save user input to json
-        let creds = json!({"wh_username": &wh_username, "wh_coll_id": wh_coll_id, "wh_api_key": wh_api_key });
-
-        let wh_json_file = match File::create("wallhaven.json") {
-            Ok(file) => file,
-            Err(why) => panic!("cannot create file: {:?}", why),
-        };
-
-        let res = serde_json::to_writer(&wh_json_file, &creds);
-
-        if res.is_err() {
-            panic!("cannot write to wallhaven.json")
-        }
-    }
-}
-
-fn wallhaven_read_json() -> WallHaven {
-    let wh_json: Value = serde_json::from_str(std::fs::read_to_string("wallhaven.json").unwrap().as_ref()).unwrap();
-    let mut wh = WallHaven {
-        ..Default::default()
-    };
-
-    wh.username = wh_json["wh_username"].as_str().unwrap().to_string();
-    wh.coll_id = wh_json["wh_coll_id"].as_i64().unwrap();
-    wh.api_key = wh_json["wh_api_key"].as_str().unwrap().to_string();
-
-    return wh;
-}
-
-
-#[cfg(test)]
-mod main {
-    #[test]
-    fn it_works() {
-        assert_eq!(2 + 2, 4);
-    }
 }

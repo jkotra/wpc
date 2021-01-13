@@ -165,7 +165,7 @@ pub fn update_file_list(dirpath: &str, maxage: i64, wpc_debug: &WPCDebug) -> Vec
 
     for file in file_list{
 
-        if file.contains("_!wpc_gs_transorm!.") { continue }; //dont include grayscale images created by WPC
+        if file.contains("_grayscale.") { continue }; //dont include grayscale images created by WPC
         if file.ends_with("png"){ wallpapers.push(file) }
         else if file.ends_with("jpg") { wallpapers.push(file) }
         else if file.ends_with("jpeg") { wallpapers.push(file) }
@@ -177,12 +177,19 @@ pub fn update_file_list(dirpath: &str, maxage: i64, wpc_debug: &WPCDebug) -> Vec
 
 pub fn clean_gs(dirpath: &str) {
 
-    let files = std::fs::read_dir(dirpath).unwrap();
+    let mut gs_dir = PathBuf::from(dirpath);
+    gs_dir.push("grayscale");
+
+    if !gs_dir.exists(){
+        return
+    }
+
+    let files = gs_dir.read_dir().unwrap();
 
     for file in files {
         let fp = file.unwrap().path().to_str().unwrap().to_string();
 
-        if fp.contains("_!wpc_gs_transorm!."){
+        if fp.contains("_grayscale."){
             let _ = std::fs::remove_file(fp);
         }
     }
