@@ -74,13 +74,14 @@ impl Reddit {
 
             for i in 0..files.len(){
                 let img = image::open(&files[i]).unwrap();
-                let (w,h) = img.dimensions();
+                let (width,height) = img.dimensions();
 
-                if w <= self.min_width || h <= self.min_height{
-                    wpc_debug.debug(format!("Reddit image Skipped: {} dim = [{}, {}], min-required = [{}, {}]",&files[i], w, h, self.min_width, self.min_height));
+                if (width >= self.min_width) || (height >= self.min_height){
+                    processed_files.push(String::from(&files[i]));
                 }
                 else{
-                    processed_files.push(String::from(&files[i]));
+                    wpc_debug.debug(format!("Reddit image Skipped: {} dim = [{}, {}], min-required = [{}, {}]",&files[i], width, height, self.min_width, self.min_height));
+                    //processed_files.push(String::from(&files[i]));
                 }
             }
 
@@ -100,7 +101,7 @@ impl Reddit {
 mod reddit {
 
     #[tokio::test]
-    async fn reddit_test_get_url(){
+    async fn reddit_test_get_image_urls_from_subreddit(){
         let urls = super::get_pictures_from_subreddit("wallpaper", 5, "hot").await;
         assert_eq!(urls.len(), 5);
     }

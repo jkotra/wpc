@@ -58,27 +58,18 @@ async fn main() {
 
     let mut local_flag = false;
     let bing_flag = matches.is_present("bing");
-    let mut wallhaven_flag = matches.is_present("wallhaven");
-    let mut reddit_flag = matches.occurrences_of("reddit") != 0;
+    let wallhaven_flag = matches.is_present("wallhaven");
+    let reddit_flag = matches.occurrences_of("reddit") != 0;
     
-    let mut user_interval = matches
+    let user_interval = matches
         .value_of("interval")
         .unwrap()
         .parse::<u64>()
         .unwrap();
-    let mut user_update_interval = matches.value_of("update").unwrap().parse::<u64>().unwrap();
+    let user_update_interval = matches.value_of("update").unwrap().parse::<u64>().unwrap();
     
 
     
-    if bing_flag && !wallhaven_flag && !reddit_flag{
-        wallhaven_flag = false;
-        local_flag = false;
-        reddit_flag = false;
-
-        user_update_interval = 60 * 60 * 24;
-        user_interval = 60 * 60 * 24;
-    }
-
     if !wallhaven_flag && !bing_flag && !reddit_flag {
         local_flag = true;
     }
@@ -129,6 +120,8 @@ async fn main() {
 
     /* end */
     
+
+    /* Inital while loop until we have atleast 1 image */
     
     let mut candidates: Vec<String> = vec![];
 
@@ -153,20 +146,21 @@ async fn main() {
         }
 
         if bing_flag{
-            candidates = Bing.update(savepath, &main_debug).await;
+            let mut files = Bing.update(savepath, &main_debug).await;
+            candidates.append(&mut files);
         }
-
     }
     
-    // main loop, deals with waiting interval and updates.
+    // main loop
     loop {
 
         //change wallpaper 
         change_wallpaper_random(&candidates, is_gs, &main_debug);
 
         wait(user_interval);
+
         main_debug.debug(
-            format!("u = {} elapsed = {}", user_update_interval, time_since.elapsed().as_secs())
+            format!("update_interval = {} elapsed_since = {}", user_update_interval, time_since.elapsed().as_secs())
         );
 
         if time_since.elapsed().as_secs() >= user_update_interval {
@@ -184,7 +178,8 @@ async fn main() {
             }
 
             if bing_flag{
-                candidates = Bing.update(savepath, &main_debug).await;
+                let mut files = Bing.update(savepath, &main_debug).await;
+                candidates.append(&mut files);
             }
 
             if reddit_flag{
@@ -198,7 +193,7 @@ async fn main() {
 }
 
 fn change_wallpaper_random(file_list: &Vec<String>, gs: bool, wpc_debug: &WPCDebug) {
-    //print random number to user if debug enabled.
+
     let rand_n = random_n(file_list.len());
     let wp = file_list.get(rand_n).unwrap();
 
@@ -212,7 +207,6 @@ fn change_wallpaper_random(file_list: &Vec<String>, gs: bool, wpc_debug: &WPCDeb
     let wp_name = wp_filename.join("");
     
     wpc_debug.debug(format!("Total = {} rand_n = {}", file_list.len(), rand_n));
-    
 
     if gs{
         
