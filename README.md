@@ -6,7 +6,7 @@ WPC *stands for* **W**all **P**aper **C**hanger.
   
 WPC is a wallpaper changer for Microsoft Windows and Linux. 
 
-*optionally*, It can retrieve wallpapers from [wallhaven.cc](https://wallhaven.cc/), [Bing.com](https://www.bing.com/) and subreddit of your choice (for example: [/r/wallpaper]())
+*optionally*, It can retrieve wallpapers from [wallhaven.cc](https://wallhaven.cc/), [Bing.com](https://www.bing.com/) and [subreddit](https://reddit.com) of your choice (for example: [/r/wallpaper](https://www.reddit.com/r/wallpaper/))
   
 # Usage  
   
