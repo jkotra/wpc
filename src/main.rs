@@ -25,7 +25,7 @@ mod windows;
 mod bing;
 use bing::Bing;
 
-#[path = "web/wallhaven_api.rs"]
+#[path = "web/wallhaven.rs"]
 mod wallhaven;
 use wallhaven::WallHaven;
 
@@ -201,7 +201,7 @@ fn change_wallpaper_random(file_list: &Vec<String>, gs: bool, wpc_debug: &WPCDeb
             img.save(wp_pbuf_gs.to_str().unwrap()).unwrap();
         }
 
-        wpc_debug.debug(format!("GrayScale Image = {}", wp_pbuf_gs.to_str().unwrap()));
+        wpc_debug.debug(format!("grayscale Image = {}", wp_pbuf_gs.to_str().unwrap()));
         wp_to_set = wp_pbuf_gs.clone();
 
     }
