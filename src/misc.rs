@@ -87,21 +87,24 @@ pub async fn download_wallpapers(urls: Vec<String>, savepath: &str, wpc_debug: &
             file_vec = url.split("/").collect();
             
 
-            let mut filename = format!("{}/{}", savepath, file_vec[file_vec.len() - 1]);
+            //let mut filename = format!("{}/{}", savepath, );
+            let mut filename = PathBuf::from(savepath);
+            filename = filename.join(file_vec[file_vec.len() - 1]);
+
             if url.contains("bing.com"){
-                filename = format!("{}/bing_pwod.jpeg", savepath);
+                filename.pop();
+                filename = filename.join("bing_wpod.jpeg");
             }
 
-            remote_files.push(filename.clone());
-            let filedest = PathBuf::from(&filename);
+            remote_files.push(String::from(filename.to_str().unwrap()));
 
-            if filedest.exists() && !url.contains("bing.com"){
+            if filename.exists() && !url.contains("bing.com"){
                     continue
             }
 
             wpc_debug.info(format!("Downloading: {}", url));
 
-            match async_download(url.as_str(), &filename).await{
+            match async_download(url.as_str(), filename.to_str().unwrap()).await{
                 Ok(_) => (),
                 Err(why) => panic!("Error: {:?}", why)
             }
@@ -109,6 +112,7 @@ pub async fn download_wallpapers(urls: Vec<String>, savepath: &str, wpc_debug: &
 
     return remote_files;
 }
+
 
 async fn async_download(url: &str, filename: &str) -> Result<bool, String> {
 
