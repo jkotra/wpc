@@ -105,8 +105,9 @@ async fn main() {
     };
 
     if wallhaven_flag {
-        wallhaven_cc.init(savepath);
-        wallhaven_cc = wallhaven_cc.read_json(savepath);
+        let wallhaven_json_file = std::path::PathBuf::from(savepath).join("wallhaven.json");
+        wallhaven_cc.init(wallhaven_json_file.to_str().unwrap());
+        wallhaven_cc = wallhaven_cc.read_json(wallhaven_json_file.to_str().unwrap());
     }
     /* END */
 
