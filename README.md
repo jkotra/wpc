@@ -60,11 +60,11 @@ OPTIONS:
 ```
 #linux
 
-./wpc -d . -w -i 60 -u 360 --startup
+./wpc -d . -i 60 -u 360 --startup
 
 #windows
 
-wpc.exe -d . -w -i 60 -u 360 --startup
+wpc.exe -d . -i 60 -u 360 --startup
 
 ```
 
