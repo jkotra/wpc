@@ -1,7 +1,6 @@
 use std::io;
 use std::fs::File;
 use std::path::PathBuf;
-
 extern crate rand;
 use rand::Rng;
 
@@ -11,8 +10,22 @@ use std::env::current_exe;
 use std::os::windows::process::CommandExt;
 
 
-pub fn print_debug_msg(content: &str) {
-    println!("[DEBUG {:?}]: {}", chrono::offset::Local::now(), content)
+pub struct WPCDebug{
+    pub is_debug: bool
+}
+
+impl WPCDebug{
+
+    pub fn debug(&self, message: String){
+        if !self.is_debug { return }
+        println!("[DEBUG {:?}]: {}", chrono::offset::Local::now(), message)
+    }
+
+    pub fn info(&self, message: String){
+        if !self.is_debug { return }
+        println!("[INFO {:?}]: {}", chrono::offset::Local::now(), message)
+    }
+
 }
 
 pub fn wait(sec: u64) {
@@ -42,10 +55,14 @@ pub fn get_wpc_args() -> Vec<String> {
     return args;
 }
 
-pub fn run_in_background(){
+pub fn run_in_background(wpc_debug: &WPCDebug){
 
     let mut args = get_wpc_args();
     args.remove(0); //remove executable name
+
+    wpc_debug.info(
+        format!("launching WPC in the background with following args: {:?}", args)
+    );
     
     #[cfg(target_os = "windows")]
     let _child = std::process::Command::new(current_exe().unwrap().to_str().unwrap())
@@ -61,41 +78,40 @@ pub fn run_in_background(){
     .expect("Child process failed to start.");
 }
 
-pub async fn download_wallpapers(urls: Vec<String>, savepath: &str, bing: bool) -> Vec<String> {
+pub async fn download_wallpapers(urls: Vec<String>, savepath: &str, wpc_debug: &WPCDebug) -> Vec<String> {
     let mut remote_files: Vec<String> = vec![];
 
     for url in urls{
             let file_vec: Vec<&str>;
 
-            if bing {
-            file_vec = url.split("&rf=").collect();
-            } else {
             file_vec = url.split("/").collect();
+            
+
+            let mut filename = PathBuf::from(savepath);
+            filename = filename.join(file_vec[file_vec.len() - 1]);
+
+            if url.contains("bing.com"){
+                filename.pop();
+                filename = filename.join("bing_wpod.jpeg");
             }
 
-            let mut filename = format!("{}/{}", savepath, file_vec[file_vec.len() - 1]);
+            remote_files.push(String::from(filename.to_str().unwrap()));
 
-            if bing {
-                filename = format!("{}/{}", savepath, "bing_wpod.jpg");
-            }
-            remote_files.push(filename.clone());
-
-            if filename.len() == 0 { panic!("Filename empty!") }
-            else { 
-                let filedest = PathBuf::from(&filename);
-                if filedest.exists() && !bing{
+            if filename.exists() && !url.contains("bing.com"){
                     continue
-                }            
-                match async_download(url.as_str(), &filename).await{
-                    Ok(_) => (),
-                    Err(why) => panic!("Error: {:?}", why)
-                }
             }
 
-    }
+            wpc_debug.info(format!("Downloading: {}", url));
+
+            match async_download(url.as_str(), filename.to_str().unwrap()).await{
+                Ok(_) => (),
+                Err(why) => panic!("Error: {:?}", why)
+            }
+        }
 
     return remote_files;
 }
+
 
 async fn async_download(url: &str, filename: &str) -> Result<bool, String> {
 
@@ -132,36 +148,79 @@ pub fn random_n(len_max: usize) -> usize {
     rng.gen_range(0,len_max)
 }
 
-pub fn update_file_list(dirpath: &str, maxage: i64) -> Vec<String> {
+pub fn update_file_list(dirpath: &str, maxage: i64, wpc_debug: &WPCDebug) -> Vec<String> {
 
     let files = std::fs::read_dir(dirpath).unwrap();
     let mut wallpapers: Vec<String> = vec![];
+    let mut file_list = vec![];
+
 
     for file in files {
         let fp = file.unwrap().path().to_str().unwrap().to_string();
+        file_list.push(fp)
+    }
 
-        //compute age diff and continue if older then max age!
-        if maxage != -1{
+    file_list = maxage_filter(file_list, maxage, wpc_debug);
 
-            //current time as timestamp
-            let maxage_time = chrono::Local::now().timestamp() - i64::from(maxage * 60 * 60);
+    for file in file_list{
 
-            //get created date and convert to timestamp.
-            let f_ct = std::fs::metadata(&fp).unwrap().created().unwrap().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs();
-
-            if maxage_time as u64 > f_ct{
-                continue;
-            }
-
-        }
-
-        if fp.ends_with("png"){ wallpapers.push(fp) }
-        else if fp.ends_with("jpg") { wallpapers.push(fp) }
-        else if fp.ends_with("jpeg") { wallpapers.push(fp) }
+        if file.contains("_grayscale.") { continue }; //dont include grayscale images created by WPC
+        if file.ends_with("png"){ wallpapers.push(file) }
+        else if file.ends_with("jpg") { wallpapers.push(file) }
+        else if file.ends_with("jpeg") { wallpapers.push(file) }
         else { continue }
     }
 
     return wallpapers
+}
+
+pub fn clean_gs(dirpath: &str) {
+
+    let mut gs_dir = PathBuf::from(dirpath);
+    gs_dir.push("grayscale");
+
+    if !gs_dir.exists(){
+        return
+    }
+
+    let files = gs_dir.read_dir().unwrap();
+
+    for file in files {
+        let fp = file.unwrap().path().to_str().unwrap().to_string();
+
+        if fp.contains("_grayscale."){
+            let _ = std::fs::remove_file(fp);
+        }
+    }
+}
+
+pub fn maxage_filter(file_list: Vec<String>, maxage: i64, wpc_debug: &WPCDebug) -> Vec<String>{
+
+    if maxage == -1 { return file_list }
+
+    let mut filtered: Vec<String> = vec![];
+
+    for file in file_list{
+
+        //current time as timestamp
+        let maxage_time = chrono::Local::now().timestamp() - i64::from(maxage * 60 * 60);
+
+        //get created date and convert to timestamp.
+        let f_ct = std::fs::metadata(&file).unwrap().created().unwrap().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs();
+
+        if maxage_time as u64 > f_ct{
+            wpc_debug.debug(
+                format!("Skipped: {}", file)
+            );
+            continue
+        }
+        else{
+            filtered.push(file)
+        }
+    }
+
+    return filtered
+
 }
 
 
@@ -171,4 +230,26 @@ pub fn is_linux_gnome_de() -> bool {
     if res == "gnome-xorg".to_string() { return true } //fedora
     if res == "budgie-desktop".to_string() { return true } //budgie
     return false;
+}
+
+
+#[cfg(test)]
+mod bing {
+
+    #[tokio::test]
+    async fn async_download_test() {
+
+        let mut url = vec![];
+        url.push(
+            String::from("https://upload.wikimedia.org/wikipedia/commons/thumb/8/80/Wikipedia-logo-v2.svg/1024px-Wikipedia-logo-v2.svg.png")
+    ); 
+        let debug = super::WPCDebug { is_debug: true };
+
+        let files = super::download_wallpapers(url, "./target/debug", &debug).await;
+        assert_eq!(files.len(), 1 as usize);
+        
+        let test_file_path = std::path::PathBuf::from(&files[0]);
+        assert_eq!(test_file_path.exists(), true);
+    }
+
 }

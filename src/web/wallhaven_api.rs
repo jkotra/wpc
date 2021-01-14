@@ -1,7 +1,9 @@
-use serde_json::{Value};
 use std::collections::HashMap;
 
 
+// JSON read/write
+use serde_json;
+use serde_json::{Value};
 
 // https://wallhaven.cc/help/api#wallpapers
 #[allow(dead_code)]

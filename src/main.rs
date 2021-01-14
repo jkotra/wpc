@@ -1,104 +1,92 @@
 #[macro_use]
 extern crate clap;
-use std::fs;
-use std::fs::File;
-use std::path::Path;
 
-// JSON read/write
-use serde_json;
-use serde_json::{json, Value};
+use clap::App;
+use image;
 
-use clap::{App};
 
 #[allow(unused_imports)]
-use crate::misc::{wait, is_linux_gnome_de, print_debug_msg, download_wallpapers, random_n};
+use crate::misc::{download_wallpapers, is_linux_gnome_de, random_n, wait, WPCDebug};
 
 mod misc;
 
 #[cfg(target_os = "linux")]
-#[path = "changer/linux/DE/gnome.rs"] mod gnome;
+#[path = "changer/linux/DE/gnome.rs"]
+mod gnome;
 
 #[cfg(target_os = "linux")]
-#[path = "changer/linux/DE/startup.rs"] mod startup;
+#[path = "changer/linux/DE/startup.rs"]
+mod startup;
 
 #[cfg(target_os = "windows")]
-#[path = "changer/windows/windows.rs"] mod windows;
+#[path = "changer/windows/windows.rs"]
+mod windows;
 
-#[path = "web/wallhaven_api.rs"] mod wallhaven;
-#[path = "web/bing_wpod.rs"] mod bing;
+#[path = "web/bing_wpod.rs"]
+mod bing;
+use bing::Bing;
 
-//this struct will be used to store wallhaven credentials.
-struct WhCreds {
-        username: String,
-        coll_id: i64,
-        api_key: String
-}
+#[path = "web/wallhaven.rs"]
+mod wallhaven;
+use wallhaven::WallHaven;
 
-// this struct will be used to update images.
-struct WpcUpdateParams{
-    bing: bool,
-    wallhaven: bool,
-    local: bool,
-    only: bool,
-    debug: bool,
-    maxage: i64,
-    wallhaven_creds: WhCreds,
-    savepath: String,
-}
+#[path = "web/reddit.rs"]
+mod reddit;
+use reddit::Reddit;
 
 #[tokio::main]
 async fn main() {
-
     let yaml = load_yaml!("cli.yml");
     let matches = App::from_yaml(yaml).get_matches();
 
-    if matches.is_present("background"){
-        misc::run_in_background();
-        std::process::exit(0);
-    }
-
-    let debug = matches.occurrences_of("debug") != 0;
-    let mut time_since = std::time::Instant::now();
     
+    let mut is_gs = matches.occurrences_of("grayscale") != 0;
+    
+    let is_debug = matches.occurrences_of("debug") != 0;
+    let main_debug = WPCDebug { is_debug: is_debug };
+
+    let mut time_since = std::time::Instant::now();
+    let maxage = matches.value_of("maxage").unwrap().parse::<i64>().unwrap();
     let savepath: String;
     let _savepath = matches.value_of("directory").unwrap();
-    if _savepath.eq_ignore_ascii_case("."){
+    if _savepath.eq_ignore_ascii_case(".") {
         savepath = String::from(std::env::current_dir().unwrap().to_str().unwrap());
-    }
-    else{
+    } else {
         savepath = String::from(_savepath)
     }
+    let savepath = &savepath;
 
-    let mut local_flag = matches.is_present("local");
+    let mut local_flag = false;
     let bing_flag = matches.is_present("bing");
     let wallhaven_flag = matches.is_present("wallhaven");
-    let mut user_interval = matches.value_of("interval").unwrap().parse::<u64>().unwrap();
-    let mut user_update_interval = matches.value_of("update").unwrap().parse::<u64>().unwrap();
+    let reddit_flag = matches.occurrences_of("reddit") != 0;
+    
+    let user_interval = matches
+        .value_of("interval")
+        .unwrap()
+        .parse::<u64>()
+        .unwrap();
+    let user_update_interval = matches.value_of("update").unwrap().parse::<u64>().unwrap();
+    
 
-
-    if !local_flag && !bing_flag && !wallhaven_flag{
+    
+    if !wallhaven_flag && !bing_flag && !reddit_flag {
         local_flag = true;
     }
 
 
-    //if only flag, disable local
-    if matches.is_present("only"){
-        local_flag = false;
-    }
+    let is_gs_rm = matches.occurrences_of("rm-grayscale-files") != 0;
+    if is_gs_rm{ 
+        misc::clean_gs(savepath);
+        is_gs = false }
 
-
-    if cfg!(linux){
+    if cfg!(linux) {
         if !misc::is_linux_gnome_de() {
-            println!("OS / Distro not supported!");
-        }
-        else {
-            if debug {
-                print_debug_msg("GNOME DE detected!");
-            }
+            panic!("DE not supported!");
         }
     }
 
-    if matches.is_present("startup"){
+    if matches.is_present("startup") {
         #[cfg(target_os = "linux")]
         startup::add_to_startup_gnome();
 
@@ -106,241 +94,167 @@ async fn main() {
         windows::add_to_startup_reg();
     }
 
-    //only bing is the argument
-    if bing_flag &&
-        !wallhaven_flag &&
-        !local_flag {
-
-        // set interval and update interval to 24 hrs
-        user_update_interval = 60 * 60 * 24;
-        user_interval = 60 * 60 * 24;
-
-        if debug { print_debug_msg("interval and update_interval set to 24hrs!") }
+    if matches.is_present("background") {
+        misc::run_in_background(&main_debug);
+        std::process::exit(0);
     }
 
-
-    let mut whcreds: WhCreds = WhCreds { username: String::from("None"), coll_id: -1, api_key: String::from("None") };
-    let mut wpc_dir = std::env::current_exe().unwrap();
-    wpc_dir.pop(); //remove wpc.exe from dir.
-
-    let wh_json_path = format!("{}/wallhaven.json", wpc_dir.to_str().unwrap());
-
-        if wallhaven_flag {
-
-            // check if file wallhaven.json exists in CWD.
-            if !Path::new(&wh_json_path).exists() {
-
-                // ask user for username and coll_id
-                let mut wh_username = String::new();
-                let mut wh_coll_id = String::new();
-                let mut wh_api_key = String::new();
-
-                println!("\nwallhaven.cc Username:");
-                std::io::stdin().read_line(&mut wh_username).unwrap();
-
-                println!("\nwallhaven.cc Collection ID:");
-                std::io::stdin().read_line(&mut wh_coll_id).unwrap();
-
-                println!("\nwallhaven.cc API key (not required for public collection) (Get API key from https://wallhaven.cc/settings/account):");
-                std::io::stdin().read_line(&mut wh_api_key).unwrap();
-
-                //remove \n \r
-                wh_username = wh_username.replace("\n", "").replace("\r", "");
-                wh_coll_id = wh_coll_id.replace("\n", "").replace("\r", "");
-                wh_api_key = wh_api_key.replace("\n", "").replace("\r", "");
-
-                //convert wh_coll_id to int64
-                let wh_coll_id = wh_coll_id.parse::<i64>().unwrap();
-
-                // save user input to json
-                let creds = json!({"wh_username": &wh_username, "wh_coll_id": wh_coll_id, "wh_api_key": wh_api_key });
-
-                let wh_json_file = match File::create("wallhaven.json"){
-                    Ok(file) => file,
-                    Err(why) => panic!("cannot create file: {:?}", why)
-                };
-
-                let res = serde_json::to_writer(&wh_json_file, &creds);
-
-                if res.is_err() {
-                    panic!("cannot write to wallhaven.json");
-                }
-            }
-
-
-            // read wallhaven.json
-            let f = match fs::read_to_string(&wh_json_path){
-                Ok(f) => f,
-                Err(why) => panic!("cannot read config: {:?}", why),
-            };
-
-            let wh_json: Value = serde_json::from_str(&f).unwrap();
-
-            whcreds.username = wh_json["wh_username"].as_str().unwrap().to_string();
-            whcreds.coll_id = wh_json["wh_coll_id"].as_i64().unwrap();
-            whcreds.api_key = wh_json["wh_api_key"].as_str().unwrap().to_string();
-        }
-
-        
-        
-        let wpc_up: WpcUpdateParams = WpcUpdateParams {
-            bing: bing_flag,
-            wallhaven: wallhaven_flag,
-            local: local_flag,
-            only: matches.is_present("only"),
-            debug: debug,
-            wallhaven_creds: whcreds,
-            maxage: matches.value_of("maxage").unwrap().parse::<i64>().unwrap(),
-            savepath: savepath
-        };
-
-
-
-    let wpc_up = Box::new(wpc_up);
-
-
-    //inner func
-    fn change_wallpaper(debug: bool, file_list: &Vec<String>) {
-
-        //print random number to user if debug enabled.
-        let rand_n = random_n(file_list.len());
-        if debug { println!("[DEBUG] RNG Result: {} total: {}", rand_n, file_list.len()) }
-
-        let wp = file_list.get(rand_n).unwrap();
-        if debug { misc::print_debug_msg(wp) }
-
-        // Set wallpaper
-        #[cfg(target_os = "linux")]
-            gnome::change_wallpaper_gnome(wp);
-
-
-        #[cfg(target_os = "windows")]
-            windows::set_wallpaper_win(wp);
-
-    }
-
-    //initial
-    let mut file_list = update_files(wpc_up.as_ref()).await.unwrap();
-    change_wallpaper(debug, &file_list);
-
-
-        //infinite loop
-        loop {
-            if debug { println!("[DEBUG] Waiting interval({})", user_interval) }
-            wait(user_interval);
-
-            change_wallpaper(debug, &file_list);
-
-
-            if debug { println!("[DEBUG] Update interval: {} elapsed: {}", user_update_interval, time_since.elapsed().as_secs()) }
-            if time_since.elapsed().as_secs() >= user_update_interval{
-                file_list = update_files(wpc_up.as_ref()).await.unwrap();
-                time_since = std::time::Instant::now();
-            }
-        }
-
-    }
-
-
-async fn update_files(params: &WpcUpdateParams) -> Result<Vec<String>, std::io::Error> {
-
-    let mut file_list = Vec::new();
-
-
-    if params.local{
-        for file in misc::update_file_list(&params.savepath, params.maxage){
-            file_list.push(file);
-        }
-    }
-
-    if params.bing{
-
-        for file in download_wallpapers(get_bing(), &params.savepath, true).await{
-
-            file_list.push(file);
-        }
-
-        if !params.wallhaven && params.only{
-                return Ok(file_list);
-        }
-
-    }
-
-    if params.wallhaven{
-
-        for file in download_wallpapers(get_wallhaven(params.wallhaven_creds.coll_id, &params.wallhaven_creds.username, &params.wallhaven_creds.api_key), &params.savepath, false).await{
-            file_list.push(file)
-        }
-
-    }
-
-    if file_list.len() == 0 { panic!("No images found in {}", params.savepath) }
-
-    if params.debug {
-        println!("[DEBUG] Updated file_list: {:?}", file_list);
-    }
-
-    return Ok(file_list)
-}
-
-
-fn get_bing() -> Vec<String> {
-    let bing = bing::get_wallpaper_of_the_day();
-    let bing = "https://bing.com".to_string()
-        + bing.unwrap()["images"][0]["url"].as_str().unwrap().replace("&pid=hp","").as_str();
-    return vec![bing]
-}
-
-fn get_wallhaven(collid: i64, username: &str, api_key: &str) -> Vec<String> {
-    
-    let collection: serde_json::value::Value;
-
-    loop {
-
-    collection = match wallhaven::wallhaven_getcoll_api(username, collid, api_key) {
-        Ok(c) => c,
-        Err(c) => { println!(":{:?}", c ); wait(5); continue }
+    /* setup wallhaven */
+    let mut wallhaven_cc = WallHaven {
+        ..Default::default()
     };
 
-    break;
+    if wallhaven_flag {
+        wallhaven_cc.init(savepath);
+        wallhaven_cc = wallhaven_cc.read_json();
     }
+    /* END */
 
+    /* setup reddit */
+
+    let reddit_com = Reddit{ subreddit: String::from(matches.value_of("reddit").unwrap()),
+                            n: matches.value_of("reddit-n").unwrap().parse::<i64>().unwrap(),
+                            cat: String::from(matches.value_of("reddit-sort").unwrap()),
+                            min_width: matches.value_of("reddit-min-width").unwrap().parse::<u32>().unwrap(),
+                            min_height: matches.value_of("reddit-min-height").unwrap().parse::<u32>().unwrap() };
+
+    /* end */
     
-    let mut coll_urls: Vec<String> = vec![];
 
-    for x in collection["data"].as_array() {
-        for y in x {
-            coll_urls.push(y["path"].as_str().unwrap().to_string())
+    /* Inital while loop until we have atleast 1 image */
+    
+    let mut candidates: Vec<String> = vec![];
+
+    while candidates.len() == 0{
+
+        main_debug.debug(
+            format!("flags: local={}, wallhaven={}, bing={}, reddit={}", local_flag, wallhaven_flag, bing_flag, reddit_flag)
+        );
+
+        if local_flag{
+            candidates = update_local_files(savepath, maxage, &main_debug);
+        }
+
+        if wallhaven_flag{
+            let mut files = wallhaven_cc.update(savepath, maxage, &main_debug).await;
+            candidates.append(&mut files);
+        }
+
+        if reddit_flag{
+            let mut files = reddit_com.update(savepath, maxage, &main_debug).await;
+            candidates.append(&mut files);
+        }
+
+        if bing_flag{
+            let mut files = Bing.update(savepath, &main_debug).await;
+            candidates.append(&mut files);
         }
     }
-    return coll_urls
+    
+    // main loop
+    loop {
+
+        //change wallpaper 
+        change_wallpaper_random(&candidates, is_gs, &main_debug);
+
+        wait(user_interval);
+
+        main_debug.debug(
+            format!("update_interval = {} elapsed_since = {}", user_update_interval, time_since.elapsed().as_secs())
+        );
+
+        if time_since.elapsed().as_secs() >= user_update_interval {
+
+            let mut candidates: Vec<String> = vec![];
+            
+            if local_flag {
+                candidates = update_local_files(savepath,
+                                                maxage, &main_debug);
+            }
+
+            if wallhaven_flag {
+                let mut files = wallhaven_cc.update(savepath, maxage, &main_debug).await;
+                candidates.append(&mut files);
+            }
+
+            if bing_flag{
+                let mut files = Bing.update(savepath, &main_debug).await;
+                candidates.append(&mut files);
+            }
+
+            if reddit_flag{
+                let mut files = reddit_com.update(savepath, maxage, &main_debug).await;
+                candidates.append(&mut files);
+            }
+
+            time_since = std::time::Instant::now();
+        }
+    }
 }
 
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn it_works() {
-        assert_eq!(2 + 2, 4);
+fn change_wallpaper_random(file_list: &Vec<String>, gs: bool, wpc_debug: &WPCDebug) {
+
+    let rand_n = random_n(file_list.len());
+    let wp = file_list.get(rand_n).unwrap();
+
+    let mut wp_to_set = std::path::PathBuf::from(&wp);
+
+    let wp_filename: Vec<&str> = wp.split("/").collect();
+    let wp_filename = wp_filename[(wp_filename.len() - 1) as usize];
+    let mut wp_filename: Vec<&str> = wp_filename.split(".").collect();
+
+    let wp_ext = wp_filename.pop().unwrap();
+    let wp_name = wp_filename.join("");
+    
+    wpc_debug.debug(format!("Total = {} rand_n = {}", file_list.len(), rand_n));
+
+    if gs{
+        
+        let mut wp_pbuf_gs = wp_to_set.clone();
+        wp_pbuf_gs.pop();
+        wp_pbuf_gs.push("grayscale");
+
+        if !wp_pbuf_gs.exists(){
+            let _ = std::fs::create_dir(wp_pbuf_gs.to_str().unwrap());
+        }
+        
+        //push filename
+        wp_pbuf_gs.push(String::from(wp_name) + "_grayscale." + wp_ext);
+
+        if !wp_pbuf_gs.exists(){
+            //open
+            let img = image::open(wp).unwrap();
+
+            //convert to grayscale
+            let img = image::imageops::grayscale(&img);
+
+            //save
+            img.save(wp_pbuf_gs.to_str().unwrap()).unwrap();
+        }
+
+        wpc_debug.debug(format!("grayscale Image = {}", wp_pbuf_gs.to_str().unwrap()));
+        wp_to_set = wp_pbuf_gs.clone();
+
+    }
+        
+    
+    let wp =  wp_to_set.to_str().unwrap();
+
+    wpc_debug.info(String::from(wp));
+
+    #[cfg(target_os = "linux")]
+    gnome::change_wallpaper_gnome(wp);
+
+    #[cfg(target_os = "windows")]
+    windows::set_wallpaper_win(wp);
+}
+
+fn update_local_files(savepath: &str, max_age: i64, wpc_debug: &WPCDebug) -> Vec<String> {
+    let mut file_list: Vec<String> = Vec::new();
+
+    for file in misc::update_file_list(savepath, max_age, wpc_debug) {
+        file_list.push(file);
     }
 
-    #[test]
-    fn bing_test_is_jpg() {
-        let bing_url = super::get_bing();
-        let bing_url: Vec<&str> = bing_url[0].split("&rf=").collect();
-        assert_eq!(bing_url.get(1).unwrap().ends_with("jpg"),true)
-    }
-
-    #[test]
-    fn bing_test_is_downloadable() {
-        let bing_url = super::get_bing();
-        let res = super::misc::download(bing_url.get(0).unwrap(),"target/test.jpg");
-            assert_eq!(res.is_ok(), true)
-    }
-
-    #[test]
-    fn wallhaven_get_wallpapers() {
-        let res = super::wallhaven::wallhaven_getcoll("th4n0s", 803855);
-        assert_eq!(res.is_ok(),true)
-    }
-
+    return file_list;
 }
