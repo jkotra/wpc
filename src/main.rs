@@ -106,7 +106,7 @@ async fn main() {
 
     if wallhaven_flag {
         wallhaven_cc.init(savepath);
-        wallhaven_cc = wallhaven_cc.read_json();
+        wallhaven_cc = wallhaven_cc.read_json(savepath);
     }
     /* END */
 

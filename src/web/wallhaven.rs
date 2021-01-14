@@ -91,9 +91,13 @@ impl WallHaven {
         }
     }
 
-    pub fn read_json(&self) -> WallHaven {
+    pub fn read_json(&self, wallhaven_json_path: &str) -> WallHaven {
+
+        let mut json_file = std::path::PathBuf::from(wallhaven_json_path);
+        json_file.push("wallhaven.json");
+
         let wh_json: Value =
-            serde_json::from_str(std::fs::read_to_string("wallhaven.json").unwrap().as_ref())
+            serde_json::from_str(std::fs::read_to_string(json_file.to_str().unwrap()).unwrap().as_ref())
                 .unwrap();
 
         let mut wh = WallHaven {

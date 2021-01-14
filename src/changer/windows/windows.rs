@@ -41,8 +41,8 @@ use winreg::enums::*;
 pub fn add_to_startup_reg() {
     println!("Trying to add WPC to startup...");
 
-    let hkcu = winreg::RegKey::predef(HKEY_LOCAL_MACHINE);
-    let subkey = hkcu.open_subkey_with_flags(r#"Software\Microsoft\Windows\CurrentVersion\Run"#,
+    let hklu = winreg::RegKey::predef(HKEY_LOCAL_MACHINE);
+    let subkey = hklu.open_subkey_with_flags(r#"Software\Microsoft\Windows\CurrentVersion\Run"#,
                                     KEY_WRITE).expect("Failed to open subkey");
     
     let mut cmd = misc::get_wpc_args();
