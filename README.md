@@ -50,47 +50,50 @@ OPTIONS:
 
 1. *cd* to the directory which contains wpc executable.
 2. command line applications are launched using the prefix `./` on linux.
-
-`./wpc` in linux and `wpc` or `./wpc.exe` in windows.
-
-3. edit and play with various command line arguments to your liking.
+3. edit and play with various options to your liking.
 
 ## Example
 
+
+### linux
 ```
-#linux
-
 ./wpc -d . -i 60 -u 360 --startup
+```
 
-#windows
-
+### Windows
+```
 wpc.exe -d . -i 60 -u 360 --startup
 
 ```
 
-The above command will change wallpaper(that are located at `-d`) every 60 seconds, check for new images every 360 seconds, and add **WPC** to startup with the same settings.
+The above command(s) will change wallpaper(that are located at `-d`) every 60 seconds, check for new images every 360 seconds, and add **WPC** to startup with the same settings.
+
+*(Tested and officially supported on arch linux and fedora)*
+*(Tested on Windows 10)*
 
 ---
 
 # Web Plugins
 
-## wallhaven.cc
-
+### wallhaven.cc
 
 `./wpc -d . -w`
+
 The program will run setup wizard if `wallhaven.json` file is not found.enter your username, collection ID and API key(required only for private collections).
 
-## Bing.com Wallpaper of the day.
+
+### Bing.com Wallpaper of the day.
 
 `./wpc -d . -b -i 86400 -u 86400`
 
 The wallpaper will be set to current Bing WPOD and updated every 24 Hrs.
 
-## Reddit.com
+
+### Reddit.com
 
 `./wpc -d . --reddit {subreddit_name} --reddit-n {quantity} --reddit-sort {hot|new|rising|top} --reddit-min-width 1920 --reddit-min-height 1080`
 
-example:
+- Reddit example:
 
 `./wpc -d . --reddit art --reddit-n 10 --reddit-sort top --reddit-min-width 1920 --reddit-min-height 1080`
 
