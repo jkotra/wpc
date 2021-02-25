@@ -1,5 +1,5 @@
 name: WPC
-version: "1.0.2"
+version: "1.0.3"
 author: Jagadeesh K. <jagadeesh@stdin.top>
 about: Wallpaper changer for Windows/Linux
 args:
@@ -31,45 +31,45 @@ args:
     - reddit:
         short: r
         long: reddit
-        help: reddit.com subreddit
+        help: Reddit subreddit (/r/something)
         takes_value: true
         default_value: "wallpaper"
 
     - reddit-n:
         long: reddit-n
-        help: no. of images to download from given subreddit.
+        help: no. of images to download from subreddit.
         takes_value: true
         default_value: "1"
     
     - reddit-sort:
         long: reddit-sort
-        help: Reddit.com sorting order. [ Hot, New, Top, Rising ]
+        help: Reddit sorting order. [ Hot, New, Top, Rising ]
         takes_value: true
         default_value: "hot" 
     
     - reddit-min-height:
         long: reddit-min-height
-        help: Minimum height.
+        help: Image.height >= reddit-min-height
         takes_value: true
         default_value: "1080"
     
     - reddit-min-width:
         long: reddit-min-width
-        help: Minimum width.
+        help: Image.width >= reddit-min-width
         takes_value: true
         default_value: "1920"
 
     - interval:
         short: i
         long: interval
-        help: interval in Secs.
+        help: interval in Seconds.
         default_value: "300"
         takes_value: true
 
     - update:
         short: u
         long: update
-        help: Update interval in Secs.
+        help: Update interval in Seconds.
         default_value: "3600"
         takes_value: true
 
@@ -86,7 +86,7 @@ args:
 
     - maxage:
         long: maxage
-        help: maximum age of wallpaper in hrs.
+        help: maximum age of wallpaper in Hours(h).
         takes_value: true
         default_value: "-1"
 

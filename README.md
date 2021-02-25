@@ -12,7 +12,7 @@ WPC is a wallpaper changer for Microsoft Windows and Linux.
   
 ```
 
-WPC 1.0.0
+WPC 1.0.3
 Jagadeesh K. <jagadeesh@stdin.top>
 Wallpaper changer for Windows/Linux
 
@@ -33,16 +33,17 @@ FLAGS:
 
 OPTIONS:
     -d, --directory <directory>                    directory of wallpapers.
-    -i, --interval <interval>                      interval in Secs. [default: 300]
-        --maxage <maxage>                          maximum age of wallpaper in hrs. [default: -1]
-    -r, --reddit <reddit>                          reddit.com subreddit [default: wallpaper]
-        --reddit-min-height <reddit-min-height>    Minimum height. [default: 1080]
-        --reddit-min-width <reddit-min-width>      Minimum width. [default: 1920]
-        --reddit-n <reddit-n>                      no. of images to download from given subreddit. [default: 1]
-        --reddit-sort <reddit-sort>                Reddit.com sorting order. [ Hot, New, Top, Rising ] [default: hot]
-    -u, --update <update>                          Update interval in Secs. [default: 3600]
+    -i, --interval <interval>                      interval in Seconds. [default: 300]
+        --maxage <maxage>                          maximum age of wallpaper in Hours(h). [default: -1]
+    -r, --reddit <reddit>                          Reddit subreddit (/r/something) [default: wallpaper]
+        --reddit-min-height <reddit-min-height>    Image.height >= reddit-min-height [default: 1080]
+        --reddit-min-width <reddit-min-width>      Image.width >= reddit-min-width [default: 1920]
+        --reddit-n <reddit-n>                      no. of images to download from subreddit. [default: 1]
+        --reddit-sort <reddit-sort>                Reddit sorting order. [ Hot, New, Top, Rising ] [default: hot]
+    -u, --update <update>                          Update interval in Seconds. [default: 3600]
 
- ```
+
+```
 
 ## How to use?
 
