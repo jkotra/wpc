@@ -1,18 +1,16 @@
-use std::process::Command;
+
+use gio::{Settings, SettingsExt};
+use std::path::PathBuf;
 
 pub fn change_wallpaper_gnome(file: &str){
 
-    let wp = String::from("file://") + file;
-
-    let out = Command::new("gsettings")
-        .arg("set")
-        .arg("org.gnome.desktop.background")
-        .arg("picture-uri")
-        .arg(&wp)
-        .output();
-
-    if out.is_err(){
-        panic!("Error while changing wallpaper: {:?}", out.unwrap().status)
+    let pb = PathBuf::from(file);
+    if !pb.exists(){
+        return
     }
-
+    
+    let wp = String::from("file://") + file;
+    let bg_settings = Settings::new("org.gnome.desktop.background");
+    let _ = bg_settings.set_string("picture-uri", wp.as_str());
+    Settings::sync();
 }
