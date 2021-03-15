@@ -1,5 +1,5 @@
 name: WPC
-version: "1.0.3"
+version: "1.1.0"
 author: Jagadeesh K. <jagadeesh@stdin.top>
 about: Wallpaper changer for Windows/Linux
 args:
@@ -13,19 +13,19 @@ args:
     - local:
         short: l
         long: local
-        help: Offline Mode.
+        help: Include only local files.
         takes_value: false
 
     - bing:
         short: b
         long: bing
-        help: Bing Wallpaper of the Day.
+        help: Bing Wallpaper of the Day (WPOD).
         takes_value: false
 
     - wallhaven:
         short: w
         long: wallhaven
-        help: wallhaven.cc
+        help: wallhaven.cc plugin.
         takes_value: false
     
     - reddit:
