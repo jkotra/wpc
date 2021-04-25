@@ -118,13 +118,13 @@ async fn async_download(url: &str, filename: &str) -> Result<bool, String> {
     let filedest = PathBuf::from(filename);
     let response = match reqwest::get(url).await{
         Ok(f) => f,
-        Err(why) => panic!(why)
+        Err(why) => panic!("WPC panic: {}", why)
     };
 
     let mut out = File::create(filedest).expect("failed to create file");
     let content = match response.bytes().await{
         Ok(f) => f,
-        Err(why) => panic!(why)
+        Err(why) => panic!("WPC panic: {}", why)
     };
 
     let mut content = std::io::Cursor::new(content);
