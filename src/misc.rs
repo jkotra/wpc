@@ -9,6 +9,13 @@ use std::env::current_exe;
 #[cfg(target_os = "windows")]
 use std::os::windows::process::CommandExt;
 
+extern crate notify;
+
+use notify::{RecommendedWatcher, Watcher, RecursiveMode};
+use std::sync::mpsc::channel;
+use std::sync::mpsc::{Sender};
+use std::time::Duration;
+
 
 pub struct WPCDebug{
     pub is_debug: bool
@@ -25,7 +32,37 @@ impl WPCDebug{
         if !self.is_debug { return }
         println!("[INFO {:?}]: {}", chrono::offset::Local::now(), message)
     }
+}
 
+
+pub fn notify_event(dir: std::sync::Arc<String>, main_thread_tx: Sender<bool>) -> () {
+    let dir = dir.as_str();
+
+    let (tx, rx) = channel();
+    let mut watcher: RecommendedWatcher = Watcher::new(tx, Duration::from_secs(2)).unwrap();
+    watcher.watch(dir, RecursiveMode::NonRecursive).unwrap();
+
+    loop {
+        match rx.recv() {
+            Ok(event) => { println!("{:?}", event);
+            match event{
+                notify::DebouncedEvent::NoticeWrite(_) => (),
+                notify::DebouncedEvent::NoticeRemove(_) => (),
+                notify::DebouncedEvent::Rescan => (),
+                notify::DebouncedEvent::Error(_, _) => (),
+                notify::DebouncedEvent::Write(_) => (),
+                notify::DebouncedEvent::Chmod(_) => (),
+                | notify::DebouncedEvent::Create(_)
+                | notify::DebouncedEvent::Remove(_)
+                | notify::DebouncedEvent::Rename(_, _) => {
+                    println!("sending to main thread");
+                    main_thread_tx.send(true).unwrap();
+                }
+        }
+    }
+            Err(e) => println!("watch error: {:?}", e),
+        }
+    }
 }
 
 pub fn wait(sec: u64) {

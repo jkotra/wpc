@@ -3,7 +3,7 @@ extern crate clap;
 
 use clap::App;
 use image;
-
+use std::sync::mpsc::channel;
 
 #[allow(unused_imports)]
 use crate::misc::{download_wallpapers, is_linux_gnome_de, random_n, wait, WPCDebug};
@@ -54,7 +54,8 @@ async fn main() {
     } else {
         savepath = String::from(_savepath)
     }
-    let savepath = &savepath;
+
+    let savepath = savepath.as_str();
 
     let mut local_flag = false;
     let bing_flag = matches.is_present("bing");
@@ -129,7 +130,7 @@ async fn main() {
     while candidates.len() == 0{
 
         main_debug.debug(
-            format!("flags: local={}, wallhaven={}, bing={}, reddit={}", local_flag, wallhaven_flag, bing_flag, reddit_flag)
+            format!("\nflags:\n\tlocal={}\n\twallhaven={}\n\tbing={}\n\treddit={}", local_flag, wallhaven_flag, bing_flag, reddit_flag)
         );
 
         if local_flag{
@@ -152,11 +153,27 @@ async fn main() {
         }
     }
     
+    let watch_dir = std::sync::Arc::new(String::from(savepath));
+    let (tx, rx) = channel();
+    std::thread::spawn(move || {
+        let watch_dir = watch_dir.clone();
+        misc::notify_event(watch_dir, tx);   
+    });
+
+    
     // main loop
     loop {
+        
+        if local_flag {
+        match rx.try_recv() {
+            Ok(_) => {candidates = update_local_files(savepath, maxage, &main_debug); main_debug.info(format!("{:?}", candidates))},
+            Err(_) => ()
+        }
+    }
 
         //change wallpaper 
         change_wallpaper_random(&candidates, is_gs, &main_debug);
+        
 
         wait(user_interval);
 
@@ -167,11 +184,6 @@ async fn main() {
         if time_since.elapsed().as_secs() >= user_update_interval {
 
             let mut candidates: Vec<String> = vec![];
-            
-            if local_flag {
-                candidates = update_local_files(savepath,
-                                                maxage, &main_debug);
-            }
 
             if wallhaven_flag {
                 let mut files = wallhaven_cc.update(savepath, maxage, &main_debug).await;
