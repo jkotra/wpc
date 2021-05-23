@@ -55,7 +55,6 @@ pub fn notify_event(dir: std::sync::Arc<String>, main_thread_tx: Sender<bool>) -
                 | notify::DebouncedEvent::Create(_)
                 | notify::DebouncedEvent::Remove(_)
                 | notify::DebouncedEvent::Rename(_, _) => {
-                    println!("sending to main thread");
                     main_thread_tx.send(true).unwrap();
                 }
         }
