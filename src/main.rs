@@ -154,10 +154,12 @@ async fn main() {
     }
     
     let watch_dir = std::sync::Arc::new(String::from(savepath));
+    let d = std::sync::Arc::new(main_debug);
     let (tx, rx) = channel();
     std::thread::spawn(move || {
         let watch_dir = watch_dir.clone();
-        misc::notify_event(watch_dir, tx);   
+        let d = d.clone();
+        misc::notify_event(watch_dir, tx, d);   
     });
 
     

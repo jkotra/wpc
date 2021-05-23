@@ -16,7 +16,7 @@ use std::sync::mpsc::channel;
 use std::sync::mpsc::{Sender};
 use std::time::Duration;
 
-
+#[derive(Copy, Clone)]
 pub struct WPCDebug{
     pub is_debug: bool
 }
@@ -35,7 +35,7 @@ impl WPCDebug{
 }
 
 
-pub fn notify_event(dir: std::sync::Arc<String>, main_thread_tx: Sender<bool>) -> () {
+pub fn notify_event(dir: std::sync::Arc<String>, main_thread_tx: Sender<bool>, debug: std::sync::Arc<WPCDebug>) -> () {
     let dir = dir.as_str();
 
     let (tx, rx) = channel();
@@ -44,7 +44,7 @@ pub fn notify_event(dir: std::sync::Arc<String>, main_thread_tx: Sender<bool>) -
 
     loop {
         match rx.recv() {
-            Ok(event) => { println!("{:?}", event);
+            Ok(event) => { debug.info( format!("{:?}", event) );
             match event{
                 notify::DebouncedEvent::NoticeWrite(_) => (),
                 notify::DebouncedEvent::NoticeRemove(_) => (),
