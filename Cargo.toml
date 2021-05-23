@@ -1,6 +1,6 @@
 [package]
 name = "wpc"
-version = "1.1.0"
+version = "1.2.0"
 authors = ["Jagadeesh Kotra <jagadeesh@stdin.top>"]
 edition = "2018"
 
@@ -17,6 +17,7 @@ chrono = "0.4.10"
 enquote = "1.0.3"
 dirs = "2.0.2"
 image = "0.23.12"
+notify = "4.0.17"
 tokio = { version = "1", features = ["full"] }
 
 [target.'cfg(windows)'.dependencies]
