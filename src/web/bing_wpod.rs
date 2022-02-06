@@ -1,8 +1,6 @@
 use serde_json::Value;
 use reqwest;
-
 use crate::misc; 
-use misc::WPCDebug;
 
 pub async fn get_bing_wpod() -> Vec<String> {
 
@@ -27,9 +25,9 @@ pub async fn get_bing_wpod() -> Vec<String> {
 pub struct Bing;
 
 impl Bing {
-    pub async fn update(&self, savepath: &str, wpc_debug: &WPCDebug) -> Vec<String>  {
+    pub async fn update(&self, savepath: &str) -> Vec<String>  {
         let url = self.get().await;
-        let file_list = misc::download_wallpapers(url, savepath, wpc_debug).await;
+        let file_list = misc::download_wallpapers(url, savepath).await;
         return file_list;
     }
 

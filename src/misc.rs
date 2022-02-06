@@ -4,6 +4,8 @@ use std::path::PathBuf;
 extern crate rand;
 use rand::Rng;
 
+use log::{debug, info, warn, error};
+
 use std::env::current_exe;
 
 #[cfg(target_os = "windows")]
@@ -16,26 +18,8 @@ use std::sync::mpsc::channel;
 use std::sync::mpsc::{Sender};
 use std::time::Duration;
 
-#[derive(Copy, Clone)]
-pub struct WPCDebug{
-    pub is_debug: bool
-}
 
-impl WPCDebug{
-
-    pub fn debug(&self, message: String){
-        if !self.is_debug { return }
-        println!("[DEBUG {:?}]: {}", chrono::offset::Local::now(), message)
-    }
-
-    pub fn info(&self, message: String){
-        if !self.is_debug { return }
-        println!("[INFO {:?}]: {}", chrono::offset::Local::now(), message)
-    }
-}
-
-
-pub fn notify_event(dir: std::sync::Arc<String>, main_thread_tx: Sender<bool>, debug: std::sync::Arc<WPCDebug>) -> () {
+pub fn notify_event(dir: std::sync::Arc<String>, main_thread_tx: Sender<bool>,) -> () {
     let dir = dir.as_str();
 
     let (tx, rx) = channel();
@@ -44,7 +28,8 @@ pub fn notify_event(dir: std::sync::Arc<String>, main_thread_tx: Sender<bool>, d
 
     loop {
         match rx.recv() {
-            Ok(event) => { debug.info( format!("{:?}", event) );
+            Ok(event) => {
+                debug!("event received: {:?}", event);
             match event{
                 notify::DebouncedEvent::NoticeWrite(_) => (),
                 notify::DebouncedEvent::NoticeRemove(_) => (),
@@ -88,18 +73,15 @@ pub fn get_wpc_args() -> Vec<String> {
         }
     }
 
+    debug!("wpc args: {:?}", args);
     return args;
 }
 
-pub fn run_in_background(wpc_debug: &WPCDebug){
+pub fn run_in_background(){
 
     let mut args = get_wpc_args();
     args.remove(0); //remove executable name
 
-    wpc_debug.info(
-        format!("launching WPC in the background with following args: {:?}", args)
-    );
-    
     #[cfg(target_os = "windows")]
     let _child = std::process::Command::new(current_exe().unwrap().to_str().unwrap())
     .args(&args)
@@ -114,7 +96,7 @@ pub fn run_in_background(wpc_debug: &WPCDebug){
     .expect("Child process failed to start.");
 }
 
-pub async fn download_wallpapers(urls: Vec<String>, savepath: &str, wpc_debug: &WPCDebug) -> Vec<String> {
+pub async fn download_wallpapers(urls: Vec<String>, savepath: &str) -> Vec<String> {
     let mut remote_files: Vec<String> = vec![];
 
     for url in urls{
@@ -137,11 +119,9 @@ pub async fn download_wallpapers(urls: Vec<String>, savepath: &str, wpc_debug: &
                     continue
             }
 
-            wpc_debug.info(format!("Downloading: {}", url));
-
             match async_download(url.as_str(), filename.to_str().unwrap()).await{
                 Ok(_) => (),
-                Err(why) => panic!("Error: {:?}", why)
+                Err(why) => error!("Error: {:?}", why)
             }
         }
 
@@ -184,7 +164,7 @@ pub fn random_n(len_max: usize) -> usize {
     rng.gen_range(0,len_max)
 }
 
-pub fn update_file_list(dirpath: &str, maxage: i64, wpc_debug: &WPCDebug) -> Vec<String> {
+pub fn update_file_list(dirpath: &str, maxage: i64) -> Vec<String> {
 
     let files = std::fs::read_dir(dirpath).unwrap();
     let mut wallpapers: Vec<String> = vec![];
@@ -196,7 +176,7 @@ pub fn update_file_list(dirpath: &str, maxage: i64, wpc_debug: &WPCDebug) -> Vec
         file_list.push(fp)
     }
 
-    file_list = maxage_filter(file_list, maxage, wpc_debug);
+    file_list = maxage_filter(file_list, maxage);
 
     for file in file_list{
 
@@ -216,6 +196,7 @@ pub fn clean_gs(dirpath: &str) {
     gs_dir.push("grayscale");
 
     if !gs_dir.exists(){
+        debug!("grayscale dir does not exist!");
         return
     }
 
@@ -230,7 +211,7 @@ pub fn clean_gs(dirpath: &str) {
     }
 }
 
-pub fn maxage_filter(file_list: Vec<String>, maxage: i64, wpc_debug: &WPCDebug) -> Vec<String>{
+pub fn maxage_filter(file_list: Vec<String>, maxage: i64) -> Vec<String>{
 
     if maxage == -1 { return file_list }
 
@@ -245,16 +226,14 @@ pub fn maxage_filter(file_list: Vec<String>, maxage: i64, wpc_debug: &WPCDebug) 
         let f_ct = std::fs::metadata(&file).unwrap().created().unwrap().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs();
 
         if maxage_time as u64 > f_ct{
-            wpc_debug.debug(
-                format!("Skipped: {}", file)
-            );
             continue
         }
         else{
             filtered.push(file)
         }
     }
-
+    
+    debug!("time filtered: {:?}", filtered);
     return filtered
 
 }
@@ -262,6 +241,7 @@ pub fn maxage_filter(file_list: Vec<String>, maxage: i64, wpc_debug: &WPCDebug) 
 
 pub fn is_linux_gnome_de() -> bool {
     let res = std::env::var("DESKTOP_SESSION").unwrap().to_string();
+    debug!("DESKTOP_SESSION = {}", res);
     if res == "gnome".to_string() { return true }
     if res == "gnome-xorg".to_string() { return true } //fedora
     if res == "budgie-desktop".to_string() { return true } //budgie
@@ -279,9 +259,8 @@ mod bing {
         url.push(
             String::from("https://upload.wikimedia.org/wikipedia/commons/thumb/8/80/Wikipedia-logo-v2.svg/1024px-Wikipedia-logo-v2.svg.png")
     ); 
-        let debug = super::WPCDebug { is_debug: true };
 
-        let files = super::download_wallpapers(url, "./target/debug", &debug).await;
+        let files = super::download_wallpapers(url, "./target/debug").await;
         assert_eq!(files.len(), 1 as usize);
         
         let test_file_path = std::path::PathBuf::from(&files[0]);

@@ -4,8 +4,6 @@ use serde_json::Value;
 use image;
 use image::{ GenericImageView};
 use crate::misc;
-use misc::WPCDebug;
-
 
 
 async fn get_pictures_from_subreddit(subreddit: &str, n: i64, cat: &str) -> Vec<String> {
@@ -62,11 +60,11 @@ pub struct Reddit{
 }
 
 impl Reddit {
-    pub async fn update(&self, savepath: &str,maxage: i64, wpc_debug: &WPCDebug) -> Vec<String> {
+    pub async fn update(&self, savepath: &str,maxage: i64) -> Vec<String> {
         
         let urls = get_pictures_from_subreddit(&self.subreddit, self.n, &self.cat).await;
-        let files = misc::download_wallpapers(urls, savepath, wpc_debug).await;
-        let files = misc::maxage_filter(files, maxage, wpc_debug);
+        let files = misc::download_wallpapers(urls, savepath).await;
+        let files = misc::maxage_filter(files, maxage);
 
         let mut processed_files = vec![];
 
@@ -80,8 +78,7 @@ impl Reddit {
                     processed_files.push(String::from(&files[i]));
                 }
                 else{
-                    wpc_debug.debug(format!("Reddit image Skipped: {} dim = [{}, {}], min-required = [{}, {}]",&files[i], width, height, self.min_width, self.min_height));
-                    //processed_files.push(String::from(&files[i]));
+                    
                 }
             }
 
@@ -91,8 +88,6 @@ impl Reddit {
             processed_files = files.clone();
         }
         
-
-        wpc_debug.debug(format!("Files from reddit = {} = {:?}", processed_files.len(), processed_files));
         return processed_files;
     }
 }

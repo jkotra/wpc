@@ -5,8 +5,10 @@ use clap::App;
 use image;
 use std::sync::mpsc::channel;
 
+use log::{debug, info, warn};
+
 #[allow(unused_imports)]
-use crate::misc::{download_wallpapers, is_linux_gnome_de, random_n, wait, WPCDebug};
+use crate::misc::*;
 
 mod misc;
 
@@ -36,15 +38,13 @@ use reddit::Reddit;
 
 #[tokio::main]
 async fn main() {
+
+    env_logger::init();
+
     let yaml = load_yaml!("cli.yml");
     let matches = App::from_yaml(yaml).get_matches();
-
     
     let mut is_gs = matches.occurrences_of("grayscale") != 0;
-    
-    let is_debug = matches.occurrences_of("debug") != 0;
-    let main_debug = WPCDebug { is_debug: is_debug };
-
     let mut time_since = std::time::Instant::now();
     let maxage = matches.value_of("maxage").unwrap().parse::<i64>().unwrap();
     let savepath: String;
@@ -54,9 +54,7 @@ async fn main() {
     } else {
         savepath = String::from(_savepath)
     }
-
     let savepath = savepath.as_str();
-
     let mut local_flag = false;
     let bing_flag = matches.is_present("bing");
     let wallhaven_flag = matches.is_present("wallhaven");
@@ -68,18 +66,20 @@ async fn main() {
         .parse::<u64>()
         .unwrap();
     let user_update_interval = matches.value_of("update").unwrap().parse::<u64>().unwrap();
-    
 
-    
     if !wallhaven_flag && !bing_flag && !reddit_flag {
+        warn!("no plugin flag found, enabling local_flag");
         local_flag = true;
     }
+
+    debug!("\nflags = \n\tlocal: {}\n\tbing: {}\n\twallhaven: {}\n\treddit: {}\n", local_flag, bing_flag, wallhaven_flag, reddit_flag);    
 
 
     let is_gs_rm = matches.occurrences_of("rm-grayscale-files") != 0;
     if is_gs_rm{ 
         misc::clean_gs(savepath);
-        is_gs = false }
+        is_gs = false
+    }
 
     if cfg!(linux) {
         if !misc::is_linux_gnome_de() {
@@ -96,7 +96,7 @@ async fn main() {
     }
 
     if matches.is_present("background") {
-        misc::run_in_background(&main_debug);
+        misc::run_in_background();
         std::process::exit(0);
     }
 
@@ -106,6 +106,7 @@ async fn main() {
     };
 
     if wallhaven_flag {
+        info!("loading wallhaven...");
         let wallhaven_json_file = std::path::PathBuf::from(savepath).join("wallhaven.json");
         wallhaven_cc.init(wallhaven_json_file.to_str().unwrap());
         wallhaven_cc = wallhaven_cc.read_json(wallhaven_json_file.to_str().unwrap());
@@ -113,7 +114,6 @@ async fn main() {
     /* END */
 
     /* setup reddit */
-
     let reddit_com = Reddit{ subreddit: String::from(matches.value_of("reddit").unwrap()),
                             n: matches.value_of("reddit-n").unwrap().parse::<i64>().unwrap(),
                             cat: String::from(matches.value_of("reddit-sort").unwrap()),
@@ -124,42 +124,38 @@ async fn main() {
     
 
     /* Inital while loop until we have atleast 1 image */
-    
     let mut candidates: Vec<String> = vec![];
 
     while candidates.len() == 0{
 
-        main_debug.debug(
-            format!("\nflags:\n\tlocal={}\n\twallhaven={}\n\tbing={}\n\treddit={}", local_flag, wallhaven_flag, bing_flag, reddit_flag)
-        );
-
         if local_flag{
-            candidates = update_local_files(savepath, maxage, &main_debug);
+            candidates = update_local_files(savepath, maxage);
         }
 
         if wallhaven_flag{
-            let mut files = wallhaven_cc.update(savepath, maxage, &main_debug).await;
+            let mut files = wallhaven_cc.update(savepath, maxage).await;
             candidates.append(&mut files);
         }
 
         if reddit_flag{
-            let mut files = reddit_com.update(savepath, maxage, &main_debug).await;
+            let mut files = reddit_com.update(savepath, maxage).await;
             candidates.append(&mut files);
         }
 
         if bing_flag{
-            let mut files = Bing.update(savepath, &main_debug).await;
+            let mut files = Bing.update(savepath).await;
             candidates.append(&mut files);
         }
+
+        info!("Initial candidates = {}", candidates.len())
     }
+
     
     let watch_dir = std::sync::Arc::new(String::from(savepath));
-    let d = std::sync::Arc::new(main_debug);
     let (tx, rx) = channel();
     std::thread::spawn(move || {
         let watch_dir = watch_dir.clone();
-        let d = d.clone();
-        misc::notify_event(watch_dir, tx, d);   
+        misc::notify_event(watch_dir, tx);   
     });
 
     
@@ -168,46 +164,45 @@ async fn main() {
         
         if local_flag {
         match rx.try_recv() {
-            Ok(_) => {candidates = update_local_files(savepath, maxage, &main_debug); main_debug.info(format!("{:?}", candidates))},
+            Ok(_) => { candidates = update_local_files(savepath, maxage) },
             Err(_) => ()
         }
+
+        debug!("candidates = {}", candidates.len());
     }
 
         //change wallpaper 
-        change_wallpaper_random(&candidates, is_gs, &main_debug);
+        change_wallpaper_random(&candidates, is_gs);
         
-
         wait(user_interval);
-
-        main_debug.debug(
-            format!("update_interval = {} elapsed_since = {}", user_update_interval, time_since.elapsed().as_secs())
-        );
+        info!("sleeping for {} secs...", user_interval);
 
         if time_since.elapsed().as_secs() >= user_update_interval {
 
             let mut candidates: Vec<String> = vec![];
 
             if wallhaven_flag {
-                let mut files = wallhaven_cc.update(savepath, maxage, &main_debug).await;
+                let mut files = wallhaven_cc.update(savepath, maxage).await;
                 candidates.append(&mut files);
             }
 
             if bing_flag{
-                let mut files = Bing.update(savepath, &main_debug).await;
+                let mut files = Bing.update(savepath).await;
                 candidates.append(&mut files);
             }
 
             if reddit_flag{
-                let mut files = reddit_com.update(savepath, maxage, &main_debug).await;
+                let mut files = reddit_com.update(savepath, maxage).await;
                 candidates.append(&mut files);
             }
 
             time_since = std::time::Instant::now();
+            info!("updated candidates = {}", candidates.len());
         }
     }
 }
 
-fn change_wallpaper_random(file_list: &Vec<String>, gs: bool, wpc_debug: &WPCDebug) {
+fn change_wallpaper_random(file_list: &Vec<String>, gs: bool) {
 
     let rand_n = random_n(file_list.len());
     let wp = file_list.get(rand_n).unwrap();
@@ -221,10 +216,8 @@ fn change_wallpaper_random(file_list: &Vec<String>, gs: bool, wpc_debug: &WPCDeb
     let wp_ext = wp_filename.pop().unwrap();
     let wp_name = wp_filename.join("");
     
-    wpc_debug.debug(format!("Total = {} rand_n = {}", file_list.len(), rand_n));
-
     if gs{
-        
+        info!("applying grayscale...");    
         let mut wp_pbuf_gs = wp_to_set.clone();
         wp_pbuf_gs.pop();
         wp_pbuf_gs.push("grayscale");
@@ -246,16 +239,13 @@ fn change_wallpaper_random(file_list: &Vec<String>, gs: bool, wpc_debug: &WPCDeb
             //save
             img.save(wp_pbuf_gs.to_str().unwrap()).unwrap();
         }
-
-        wpc_debug.debug(format!("grayscale Image = {}", wp_pbuf_gs.to_str().unwrap()));
         wp_to_set = wp_pbuf_gs.clone();
 
     }
         
     
     let wp =  wp_to_set.to_str().unwrap();
-
-    wpc_debug.info(String::from(wp));
+    info!("wallpaper = {}", wp);
 
     #[cfg(target_os = "linux")]
     gnome::change_wallpaper_gnome(wp);
@@ -264,10 +254,10 @@ fn change_wallpaper_random(file_list: &Vec<String>, gs: bool, wpc_debug: &WPCDeb
     windows::set_wallpaper_win(wp);
 }
 
-fn update_local_files(savepath: &str, max_age: i64, wpc_debug: &WPCDebug) -> Vec<String> {
+fn update_local_files(savepath: &str, max_age: i64) -> Vec<String> {
     let mut file_list: Vec<String> = Vec::new();
 
-    for file in misc::update_file_list(savepath, max_age, wpc_debug) {
+    for file in misc::update_file_list(savepath, max_age) {
         file_list.push(file);
     }
 

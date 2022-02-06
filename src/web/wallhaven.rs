@@ -1,12 +1,12 @@
 use crate::misc; 
-use misc::WPCDebug;
-
 use std::fs::File;
 use std::path::Path;
 
 // JSON read/write
 use serde_json;
 use serde_json::{json, Value};
+
+use log::{debug, info, warn};
 
 mod wallhaven_api;
 
@@ -18,23 +18,23 @@ pub struct WallHaven {
 }
 
 impl WallHaven {
-    pub async fn update(&self, savepath: &str, maxage: i64, wpc_debug: &WPCDebug) -> Vec<String> {
-        let wallpaper_links = self.get_collection(wpc_debug);
-        let mut files = misc::download_wallpapers(wallpaper_links, &savepath, &wpc_debug).await;
+    pub async fn update(&self, savepath: &str, maxage: i64) -> Vec<String> {
+        let wallpaper_links = self.get_collection();
+        let mut files = misc::download_wallpapers(wallpaper_links, &savepath).await;
         if maxage != -1 {
-            files = misc::maxage_filter(files.clone(), maxage, wpc_debug);
+            files = misc::maxage_filter(files.clone(), maxage);
         }
         return files;
     }
 
-    fn get_collection(&self, wpc_debug: &WPCDebug) -> Vec<String> {
+    fn get_collection(&self) -> Vec<String> {
         let collection: serde_json::value::Value;
 
         loop {
             collection = match wallhaven_api::wallhaven_getcoll_api(&self.username, self.coll_id, &self.api_key) {
                 Ok(c) => c,
                 Err(c) => {
-                    println!(":{:?}", c);
+                    warn!(":{:?}", c);
                     misc::wait(5);
                     continue;
                 }
@@ -49,13 +49,6 @@ impl WallHaven {
                 coll_urls.push(y["path"].as_str().unwrap().to_string())
             }
         }
-
-        wpc_debug.debug(format!(
-            "links parsed from collection ID {} = {} = {:?}",
-            self.coll_id,
-            coll_urls.len(),
-            coll_urls
-        ));
 
         return coll_urls;
     }
