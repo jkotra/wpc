@@ -20,10 +20,12 @@ pub struct WallHaven {
 impl WallHaven {
     pub async fn update(&self, savepath: &str, maxage: i64) -> Vec<String> {
         let wallpaper_links = self.get_collection();
+        debug!("wallhaven collection links = {:?}", wallpaper_links);
         let mut files = misc::download_wallpapers(wallpaper_links, &savepath).await;
         if maxage != -1 {
             files = misc::maxage_filter(files.clone(), maxage);
         }
+        debug!("files from wallhaven = {:?}", files);
         return files;
     }
 

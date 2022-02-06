@@ -4,7 +4,7 @@ use serde_json::Value;
 use image;
 use image::{ GenericImageView};
 use crate::misc;
-
+use log::{debug, info, warn};
 
 async fn get_pictures_from_subreddit(subreddit: &str, n: i64, cat: &str) -> Vec<String> {
 
@@ -63,6 +63,7 @@ impl Reddit {
     pub async fn update(&self, savepath: &str,maxage: i64) -> Vec<String> {
         
         let urls = get_pictures_from_subreddit(&self.subreddit, self.n, &self.cat).await;
+        debug!("URLs from reddit = {:?}", urls);
         let files = misc::download_wallpapers(urls, savepath).await;
         let files = misc::maxage_filter(files, maxage);
 
@@ -88,6 +89,7 @@ impl Reddit {
             processed_files = files.clone();
         }
         
+        debug!("files from reddit = {:?}", processed_files);
         return processed_files;
     }
 }
