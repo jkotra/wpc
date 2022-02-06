@@ -108,7 +108,8 @@ async fn main() {
     if wallhaven_flag {
         info!("loading wallhaven...");
         let wallhaven_json_file = std::path::PathBuf::from(savepath).join("wallhaven.json");
-        wallhaven_cc.init(wallhaven_json_file.to_str().unwrap());
+        debug!("wallhaven_json_file = {:?} | exists = {}", wallhaven_json_file, wallhaven_json_file.exists());
+        wallhaven_cc.init(wallhaven_json_file.clone());
         wallhaven_cc = wallhaven_cc.read_json(wallhaven_json_file.to_str().unwrap());
     }
     /* END */

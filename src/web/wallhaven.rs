@@ -1,6 +1,6 @@
 use crate::misc; 
 use std::fs::File;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 // JSON read/write
 use serde_json;
@@ -55,27 +55,31 @@ impl WallHaven {
         return coll_urls;
     }
 
-    pub fn init(&self, wallhaven_json_path: &str) {
+    pub fn init(&self, savepath: PathBuf) {
         // check if file wallhaven.json exists in CWD.
-        if !Path::new(wallhaven_json_path).exists() {
+        if !savepath.exists() {
             // ask user for username and coll_id
             let mut wh_username = String::new();
             let mut wh_coll_id = String::new();
             let mut wh_api_key = String::new();
-            println!("wallhaven.cc Username:");
+
+            println!("👤 Username:");
             std::io::stdin().read_line(&mut wh_username).unwrap();
-            println!("wallhaven.cc Collection ID:");
+            println!("📟 Collection ID:");
             std::io::stdin().read_line(&mut wh_coll_id).unwrap();
-            println!("\nwallhaven.cc API key (not required for public collection) (Get API key from https://wallhaven.cc/settings/account):");
+            println!("🔑 API key\n(not required for public collection, just press ENTER)\n(Get API key from https://wallhaven.cc/settings/account):");
             std::io::stdin().read_line(&mut wh_api_key).unwrap();
+
             wh_username = wh_username.replace("\n", "").replace("\r", "");
             wh_coll_id = wh_coll_id.replace("\n", "").replace("\r", "");
             wh_api_key = wh_api_key.replace("\n", "").replace("\r", "");
+
             //convert wh_coll_id to int64
             let wh_coll_id = wh_coll_id.parse::<i64>().unwrap();
+
             // save user input to json
             let creds = json!({"wh_username": &wh_username, "wh_coll_id": wh_coll_id, "wh_api_key": wh_api_key });
-            let wh_json_file = match File::create("wallhaven.json") {
+            let wh_json_file = match File::create(savepath) {
                 Ok(file) => file,
                 Err(why) => panic!("cannot create file: {:?}", why),
             };
