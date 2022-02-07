@@ -22,7 +22,6 @@ USAGE:
 FLAGS:
         --background            Run WPC in background.
     -b, --bing                  Bing Wallpaper of the Day.
-    -D, --debug                 show debug messages.
         --grayscale             convert image to grayscale.
     -h, --help                  Prints help information
     -l, --local                 Offline Mode.
@@ -69,8 +68,8 @@ wpc.exe -d . -i 60 -u 360 --startup
 
 The above command(s) will change wallpaper(that are located at `-d`) every 60 seconds, check for new images every 360 seconds, and add **WPC** to startup with the same settings.
 
-*(Tested and officially supported on arch linux and fedora)*
 *(Tested on Windows 10)*
+
 
 ---
 
@@ -105,8 +104,20 @@ The wallpaper will be set to current Bing WPOD and updated every 24 Hrs.
 
 Complete [wallhaven API](https://wallhaven.cc/help/api) is implemented in [api/wallhaven.rs](src/web/wallhaven_api.rs)
 
+---
+
 # Building  
 
 `cargo build --release`  
 
 Binary will be located at `target/release/`
+
+---
+
+# Debug
+
+use `RUST_LOG={LEVEL}` as prefix.
+
+example:
+
+`RUST_LOG=debug ./wpc -d .`

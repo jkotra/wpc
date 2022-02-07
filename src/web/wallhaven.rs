@@ -1,12 +1,12 @@
 use crate::misc; 
-use misc::WPCDebug;
-
 use std::fs::File;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 // JSON read/write
 use serde_json;
 use serde_json::{json, Value};
+
+use log::{debug, info, warn};
 
 mod wallhaven_api;
 
@@ -18,23 +18,25 @@ pub struct WallHaven {
 }
 
 impl WallHaven {
-    pub async fn update(&self, savepath: &str, maxage: i64, wpc_debug: &WPCDebug) -> Vec<String> {
-        let wallpaper_links = self.get_collection(wpc_debug);
-        let mut files = misc::download_wallpapers(wallpaper_links, &savepath, &wpc_debug).await;
+    pub async fn update(&self, savepath: &str, maxage: i64) -> Vec<String> {
+        let wallpaper_links = self.get_collection();
+        debug!("wallhaven collection links = {:?}", wallpaper_links);
+        let mut files = misc::download_wallpapers(wallpaper_links, &savepath).await;
         if maxage != -1 {
-            files = misc::maxage_filter(files.clone(), maxage, wpc_debug);
+            files = misc::maxage_filter(files.clone(), maxage);
         }
+        debug!("files from wallhaven = {:?}", files);
         return files;
     }
 
-    fn get_collection(&self, wpc_debug: &WPCDebug) -> Vec<String> {
+    fn get_collection(&self) -> Vec<String> {
         let collection: serde_json::value::Value;
 
         loop {
             collection = match wallhaven_api::wallhaven_getcoll_api(&self.username, self.coll_id, &self.api_key) {
                 Ok(c) => c,
                 Err(c) => {
-                    println!(":{:?}", c);
+                    warn!(":{:?}", c);
                     misc::wait(5);
                     continue;
                 }
@@ -50,37 +52,34 @@ impl WallHaven {
             }
         }
 
-        wpc_debug.debug(format!(
-            "links parsed from collection ID {} = {} = {:?}",
-            self.coll_id,
-            coll_urls.len(),
-            coll_urls
-        ));
-
         return coll_urls;
     }
 
-    pub fn init(&self, wallhaven_json_path: &str) {
+    pub fn init(&self, savepath: PathBuf) {
         // check if file wallhaven.json exists in CWD.
-        if !Path::new(wallhaven_json_path).exists() {
+        if !savepath.exists() {
             // ask user for username and coll_id
             let mut wh_username = String::new();
             let mut wh_coll_id = String::new();
             let mut wh_api_key = String::new();
-            println!("wallhaven.cc Username:");
+
+            println!("👤 Username:");
             std::io::stdin().read_line(&mut wh_username).unwrap();
-            println!("wallhaven.cc Collection ID:");
+            println!("📟 Collection ID:");
             std::io::stdin().read_line(&mut wh_coll_id).unwrap();
-            println!("\nwallhaven.cc API key (not required for public collection) (Get API key from https://wallhaven.cc/settings/account):");
+            println!("🔑 API key\n(not required for public collection, just press ENTER)\n(Get API key from https://wallhaven.cc/settings/account):");
             std::io::stdin().read_line(&mut wh_api_key).unwrap();
+
             wh_username = wh_username.replace("\n", "").replace("\r", "");
             wh_coll_id = wh_coll_id.replace("\n", "").replace("\r", "");
             wh_api_key = wh_api_key.replace("\n", "").replace("\r", "");
+
             //convert wh_coll_id to int64
             let wh_coll_id = wh_coll_id.parse::<i64>().unwrap();
+
             // save user input to json
             let creds = json!({"wh_username": &wh_username, "wh_coll_id": wh_coll_id, "wh_api_key": wh_api_key });
-            let wh_json_file = match File::create("wallhaven.json") {
+            let wh_json_file = match File::create(savepath) {
                 Ok(file) => file,
                 Err(why) => panic!("cannot create file: {:?}", why),
             };
