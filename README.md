@@ -1,13 +1,27 @@
 # WPC  
   
-[![Build Status](https://travis-ci.org/jkotra/wpc.svg?branch=master)](https://travis-ci.org/jkotra/wpc)![](https://img.shields.io/github/languages/code-size/jkotra/wpc)
+[![Build Status](https://travis-ci.org/jkotra/wpc.svg?branch=master)](https://travis-ci.org/jkotra/wpc) ![](https://img.shields.io/github/languages/code-size/jkotra/wpc)
 
 WPC *stands for* **W**all **P**aper **C**hanger.
   
 WPC is a wallpaper changer for Microsoft Windows and Linux. 
 
 *optionally*, It can retrieve wallpapers from [wallhaven.cc](https://wallhaven.cc/), [Bing.com](https://www.bing.com/) and [subreddit](https://reddit.com) of your choice (for example: [/r/wallpaper](https://www.reddit.com/r/wallpaper/))
-  
+
+---
+
+# Install
+
+[Available on AUR](https://aur.archlinux.org/packages/wpc)
+
+## Building  
+
+`cargo build --release`  
+
+Binary will be located at `target/release/`
+
+---
+
 # Usage  
   
 ```
@@ -103,14 +117,6 @@ The wallpaper will be set to current Bing WPOD and updated every 24 Hrs.
 # wallhaven API
 
 Complete [wallhaven API](https://wallhaven.cc/help/api) is implemented in [api/wallhaven.rs](src/web/wallhaven_api.rs)
-
----
-
-# Building  
-
-`cargo build --release`  
-
-Binary will be located at `target/release/`
 
 ---
 
