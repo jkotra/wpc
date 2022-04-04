@@ -4,7 +4,7 @@ use std::path::PathBuf;
 extern crate rand;
 use rand::Rng;
 
-use log::{debug, info, warn, error};
+use log::{debug, error};
 
 use std::env::current_exe;
 
@@ -60,16 +60,11 @@ pub fn get_wpc_args() -> Vec<String> {
     for i in (0..args.len()).rev(){
         if args[i] == "--startup"{ args.remove(i); }
         else if args[i] == "-S" { args.remove(i); }
-        else if args[i] == "--debug" { args.remove(i); }
-        else if args[i] == "-D" { args.remove(i); }
         else if args[i] == "--background" { args.remove(i); }
-        else if args[i] == "-d" || args[i] == "--directory"{
-            if args[i+1] == "."{
-
-                args[i+1] = String::from(std::env::current_dir().unwrap().to_str().unwrap())
-
+        else if args[i] == "-d" || args[i] == "--directory" {
+            if args[i+1] == "." {
+                args[i+1] = String::from(std::env::current_dir().unwrap().to_str().unwrap());
             }
-
         }
     }
 
@@ -108,16 +103,7 @@ pub async fn download_wallpapers(urls: Vec<String>, savepath: &str) -> Vec<Strin
             let mut filename = PathBuf::from(savepath);
             filename = filename.join(file_vec[file_vec.len() - 1]);
 
-            if url.contains("bing.com"){
-                filename.pop();
-                filename = filename.join("bing_wpod.jpeg");
-            }
-
             remote_files.push(String::from(filename.to_str().unwrap()));
-
-            if filename.exists() && !url.contains("bing.com"){
-                    continue
-            }
 
             match async_download(url.as_str(), filename.to_str().unwrap()).await{
                 Ok(_) => (),
@@ -132,30 +118,22 @@ pub async fn download_wallpapers(urls: Vec<String>, savepath: &str) -> Vec<Strin
 async fn async_download(url: &str, filename: &str) -> Result<bool, String> {
 
     let filedest = PathBuf::from(filename);
+    if filedest.exists() { return  Ok(true); }
     let response = match reqwest::get(url).await{
         Ok(f) => f,
-        Err(why) => panic!("WPC panic: {}", why)
+        Err(why) => return Err(String::from(format!("{:?}", why)))
     };
 
     let mut out = File::create(filedest).expect("failed to create file");
     let content = match response.bytes().await{
         Ok(f) => f,
-        Err(why) => panic!("WPC panic: {}", why)
+        Err(why) => return Err(String::from(format!("{:?}", why)))
     };
 
     let mut content = std::io::Cursor::new(content);
     io::copy(&mut content, &mut out).expect("failed to copy content");
 
     return Ok(true)
-}
-
-#[allow(dead_code)]
-pub fn download(url: &str, filename: &str) -> Result<(), Box<dyn std::error::Error>> {
-
-    let mut response = reqwest::blocking::get(url).expect("Cannot download!");
-    let mut out = File::create(filename).expect("failed to create file");
-    io::copy(&mut response, &mut out).expect("failed to copy content");
-    Ok(())
 }
 
 pub fn random_n(len_max: usize) -> usize {
@@ -190,27 +168,6 @@ pub fn update_file_list(dirpath: &str, maxage: i64) -> Vec<String> {
     return wallpapers
 }
 
-pub fn clean_gs(dirpath: &str) {
-
-    let mut gs_dir = PathBuf::from(dirpath);
-    gs_dir.push("grayscale");
-
-    if !gs_dir.exists(){
-        debug!("grayscale dir does not exist!");
-        return
-    }
-
-    let files = gs_dir.read_dir().unwrap();
-
-    for file in files {
-        let fp = file.unwrap().path().to_str().unwrap().to_string();
-
-        if fp.contains("_grayscale."){
-            let _ = std::fs::remove_file(fp);
-        }
-    }
-}
-
 pub fn maxage_filter(file_list: Vec<String>, maxage: i64) -> Vec<String>{
 
     if maxage == -1 { return file_list }
@@ -242,15 +199,15 @@ pub fn maxage_filter(file_list: Vec<String>, maxage: i64) -> Vec<String>{
 pub fn is_linux_gnome_de() -> bool {
     let res = std::env::var("DESKTOP_SESSION").unwrap().to_string();
     debug!("DESKTOP_SESSION = {}", res);
-    if res == "gnome".to_string() { return true }
-    if res == "gnome-xorg".to_string() { return true } //fedora
-    if res == "budgie-desktop".to_string() { return true } //budgie
+    if res.contains("gnome"){
+        return true;
+    }
     return false;
 }
 
 
 #[cfg(test)]
-mod bing {
+mod misc_tests {
 
     #[tokio::test]
     async fn async_download_test() {

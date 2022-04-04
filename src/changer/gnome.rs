@@ -1,13 +1,25 @@
-use std::path::Path;
+use gio::{Settings, SettingsExt};
 use std::fs::File;
 use std::io::Write;
+use std::path::Path;
+use std::path::PathBuf;
 
-#[path = "../../../misc.rs"]
-#[allow(unused)]
-mod misc;
+use crate::misc;
 
-pub fn add_to_startup_gnome() -> bool{
 
+pub fn change_wallpaper_gnome(file: &str) {
+    let pb = PathBuf::from(file);
+    if !pb.exists() {
+        return;
+    }
+
+    let wp = String::from("file://") + file;
+    let bg_settings = Settings::new("org.gnome.desktop.background");
+    let _ = bg_settings.set_string("picture-uri", wp.as_str());
+    Settings::sync();
+}
+
+pub fn add_to_startup_gnome() -> bool {
     let mut args: Vec<String> = misc::get_wpc_args();
     args.remove(0);
 
@@ -29,8 +41,7 @@ pub fn add_to_startup_gnome() -> bool{
     if res.is_err() != true && Path::new(&startup_path).exists() {
         println!("Added to startup: {}", startup_path);
         return true;
-    }
-    else{
+    } else {
         return false;
     }
 }

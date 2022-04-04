@@ -4,7 +4,7 @@ use serde_json::Value;
 use image;
 use image::{ GenericImageView};
 use crate::misc;
-use log::{debug, info, warn};
+use log::{debug};
 
 async fn get_pictures_from_subreddit(subreddit: &str, n: i64, cat: &str) -> Vec<String> {
 
@@ -50,6 +50,7 @@ async fn get_pictures_from_subreddit(subreddit: &str, n: i64, cat: &str) -> Vec<
     return file_vec;
 }
 
+#[derive(Default, Debug)]
 pub struct Reddit{
     pub subreddit: String,
     pub cat: String,

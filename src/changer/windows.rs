@@ -9,10 +9,9 @@ use winapi::um::winuser::SystemParametersInfoW;
 use winapi::um::winuser::SPIF_SENDCHANGE;
 use winapi::um::winuser::SPIF_UPDATEINIFILE;
 use winapi::um::winuser::SPI_SETDESKWALLPAPER;
-
-#[path = "../../misc.rs"]
-#[allow(unused)]
-mod misc;
+extern crate winreg;
+use winreg::enums::*;
+use crate::misc;
 
 pub fn set_wallpaper_win(path: &str) {
     let path = OsStr::new(path)
@@ -33,9 +32,6 @@ pub fn set_wallpaper_win(path: &str) {
                 }
             }
 }
-
-extern crate winreg;
-use winreg::enums::*;
 
 
 pub fn add_to_startup_reg() {
