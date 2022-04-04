@@ -67,16 +67,15 @@ OPTIONS:
 ## Example
 
 
-### linux
-```
-./wpc -d . -i 60 -u 360 --startup
-```
+### Linux
 
-### Windows
-```
-wpc.exe -d . -i 60 -u 360 --startup
+`./wpc -d . -i 60 -u 360 --startup`
 
-```
+
+### Windows (10+)
+
+`wpc.exe -d . -i 60 -u 360 --startup`
+
 
 The above command(s) will change wallpaper(that are located at `-d`) every 60 seconds, check for new images every 360 seconds, and add **WPC** to startup with the same settings.
 
@@ -120,5 +119,7 @@ example:
 `RUST_LOG=debug ./wpc -d .`
 
 on windows / powershell:
-`$env:RUST_LOG = "DEBUG"
-./wpc.exe -d .`
+
+`$env:RUST_LOG = "DEBUG"`
+
+`./wpc.exe -d .`
