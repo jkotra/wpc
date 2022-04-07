@@ -1,4 +1,6 @@
-use gio::{Settings, SettingsExt};
+use gio::traits::SettingsExt;
+use gio::{Settings};
+use log::debug;
 use std::fs::File;
 use std::io::Write;
 use std::path::Path;
@@ -15,8 +17,17 @@ pub fn change_wallpaper_gnome(file: &str) {
 
     let wp = String::from("file://") + file;
     let bg_settings = Settings::new("org.gnome.desktop.background");
-    let _ = bg_settings.set_string("picture-uri", wp.as_str());
-    Settings::sync();
+    
+    match bg_settings.set_string("picture-uri", wp.as_str()) {
+        Ok(()) => (),
+        Err(why) => debug!("{:?}", why)
+    }
+
+    match bg_settings.set_string("picture-uri-dark", wp.as_str()) {
+        Ok(()) => (),
+        Err(why) => debug!("{:?}", why)
+    }
+    
 }
 
 pub fn add_to_startup_gnome() -> bool {
