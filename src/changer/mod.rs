@@ -21,8 +21,7 @@ pub fn add_to_startup(){
     #[cfg(target_os = "windows")]
     windows::add_to_startup_reg();
 
-
     #[cfg(target_os = "linux")]
-    gnome::add_to_startup_gnome();
-    
+    gnome::add_to_startup_gnome().expect("Error while adding to startup.");
+
 }

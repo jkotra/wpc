@@ -95,12 +95,14 @@ The program will run setup wizard if `wallhaven.json` file is not found.enter yo
 
 ### Reddit.com
 
-`./wpc -d . --reddit {subreddit_name} --reddit-n {quantity} --reddit-sort {hot|new|rising|top} --reddit-min-width 1920 --reddit-min-height 1080`
-
+```
+./wpc -d . --reddit {subreddit_name} --reddit-n {quantity} --reddit-sort {hot|new|rising|top} --reddit-min-width 1920 --reddit-min-height 1080
+```
 - Reddit example:
 
-`./wpc -d . --reddit art --reddit-n 10 --reddit-sort top --reddit-min-width 1920 --reddit-min-height 1080`
-
+```
+./wpc -d . --reddit art --reddit-n 10 --reddit-sort top --reddit-min-width 1920 --reddit-min-height 1080
+```
 
 ---
 

@@ -1,13 +1,25 @@
 use gio::traits::SettingsExt;
 use gio::{Settings};
 use log::debug;
-use std::fs::File;
-use std::io::Write;
-use std::path::Path;
+use log::{info};
 use std::path::PathBuf;
-
+use serde::{Deserialize, Serialize};
 use crate::misc;
 
+#[derive(Debug, Serialize, Deserialize, PartialEq)]
+struct GnomeVersion {
+    platform: i32,
+    minor: i32,
+    micro: i32,
+    distributor: String
+}
+
+fn get_gnome_version() -> GnomeVersion {
+    let gv = serde_xml_rs::from_str(
+        &std::fs::read_to_string("/usr/share/gnome/gnome-version.xml").unwrap()
+    ).unwrap();
+    return gv;
+}
 
 pub fn change_wallpaper_gnome(file: &str) {
     let pb = PathBuf::from(file);
@@ -17,42 +29,94 @@ pub fn change_wallpaper_gnome(file: &str) {
 
     let wp = String::from("file://") + file;
     let bg_settings = Settings::new("org.gnome.desktop.background");
-    
+
     match bg_settings.set_string("picture-uri", wp.as_str()) {
         Ok(()) => (),
         Err(why) => debug!("{:?}", why)
     }
 
-    match bg_settings.set_string("picture-uri-dark", wp.as_str()) {
-        Ok(()) => (),
-        Err(why) => debug!("{:?}", why)
+    let version = get_gnome_version();
+
+    if version.platform >= 42 {
+        match bg_settings.set_string("picture-uri-dark", wp.as_str()) {
+            Ok(()) => (),
+            Err(why) => debug!("{:?}", why)
+        }
     }
     
 }
 
-pub fn add_to_startup_gnome() -> bool {
+pub fn add_to_startup_gnome() -> Result<bool, Box<dyn std::error::Error>> {
     let mut args: Vec<String> = misc::get_wpc_args();
     args.remove(0);
 
     let curr_exe = std::env::current_exe().unwrap();
     let curr_exe = curr_exe.to_str().unwrap();
-
     let args = args.join(" ");
 
-    let home = dirs::home_dir().unwrap();
-    let home = home.to_str().unwrap();
+    let mut sysd_path = dirs::home_dir().unwrap();
+    sysd_path.push(".config/systemd/user/");
 
-    let startup = format!("\n[Desktop Entry]\nType=Application\nName=WPC\nExec={exe} {args}\nIcon=\nComment=\nX-GNOME-Autostart-enabled=true\n", exe=curr_exe, args=args);
+    info!("{:?}/wpc.service", sysd_path.as_os_str());
 
-    let startup_path = format!("{}/.config/autostart/wpc.desktop", home.to_owned());
+    let startup = format!("
 
-    let mut f = File::create(&startup_path).expect("cannot create startup file!");
-    let res = f.write_all(startup.as_bytes());
+    [Unit]
+    Description=Wallpaper Changer
+    Requires=graphical-session.target
 
-    if res.is_err() != true && Path::new(&startup_path).exists() {
-        println!("Added to startup: {}", startup_path);
-        return true;
-    } else {
-        return false;
+    [Service]
+    Environment='RUST_LOG=info'
+    ExecStart={exe} {args}
+    Restart=always
+    RestartSec=10
+
+    [Install]
+    WantedBy=default.target
+
+    ", exe=curr_exe, args=args);
+
+    info!("unit file: {}", startup);
+
+    if sysd_path.exists(){
+        match std::fs::remove_file(sysd_path.to_str().unwrap().to_string() + "wpc.service"){
+            Ok(_) => info!("removed old wpc.service."),
+            Err(e) => info!("{:#?}", e)
+        }
     }
+    else{
+        std::fs::create_dir_all(sysd_path.as_path()).expect("cannot create recursive dirs.");
+    }
+
+    // add file to path.
+    sysd_path.push("wpc.service");
+
+    std::fs::write(sysd_path.as_path(), startup).expect("cannot write to unit file.");
+    info!("wpc.service created!");
+
+    /*
+    let resp = std::process::Command::new("systemctl")
+    .args(vec!["--user", "daemon-reload"])
+    .output()
+    .expect("cannot reload systemd daemon.");
+    info!("{:#?}", resp);
+
+    if resp.status.code().unwrap() == 0{
+        info!("systemd daemon reloaded!");
+    }
+    */
+
+    let resp = std::process::Command::new("systemctl")
+    .args(vec!["--user", "enable", "wpc"])
+    .output()
+    .expect("cannot enable unit.");
+
+    info!("{:#?}", resp);
+
+    if resp.status.code().unwrap() == 0{
+        info!("wpc.service enabled!");
+        info!("wpc added to startup!");
+    }
+
+    return Ok(true);
 }

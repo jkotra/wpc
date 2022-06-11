@@ -1,3 +1,10 @@
+# 1.5.0
+
+---
+
+* [**NEW**] use systemd unit for startup on linux.
+* [**FIX**] crash on gnome-shell < 42.
+
 # 1.4.0
 
 ---
