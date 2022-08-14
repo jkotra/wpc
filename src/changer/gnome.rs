@@ -21,7 +21,7 @@ fn get_gnome_version() -> GnomeVersion {
     return gv;
 }
 
-pub fn change_wallpaper_gnome(file: &str) {
+pub fn change_wallpaper_gnome(file: &str, theme: Option<String>) {
     let pb = PathBuf::from(file);
     if !pb.exists() {
         return;
@@ -29,6 +29,12 @@ pub fn change_wallpaper_gnome(file: &str) {
 
     let wp = String::from("file://") + file;
     let bg_settings = Settings::new("org.gnome.desktop.background");
+    let if_settings = Settings::new("org.gnome.desktop.interface");
+
+    match theme {
+        Some(x) => if_settings.set_string("color-scheme", &x).unwrap(),
+        None => (),
+    }
 
     match bg_settings.set_string("picture-uri", wp.as_str()) {
         Ok(()) => (),
@@ -36,6 +42,7 @@ pub fn change_wallpaper_gnome(file: &str) {
     }
 
     let version = get_gnome_version();
+    debug!("{:?}", version);
 
     if version.platform >= 42 {
         match bg_settings.set_string("picture-uri-dark", wp.as_str()) {

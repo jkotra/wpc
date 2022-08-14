@@ -10,6 +10,20 @@ pub struct RedditOptions {
     pub reddit_min_width: u32,
 }
 
+#[derive(Default, Debug, Copy)]
+pub struct ThemeOptions {
+    pub set_theme: bool,
+    pub theme_th: f32,
+    pub theme_dark_only: bool,
+    pub theme_light_only: bool,
+}
+
+impl Clone for ThemeOptions {
+    fn clone(&self) -> ThemeOptions {
+        *self
+    }
+}
+
 #[derive(Debug)]
 pub struct WPCSettings {
     pub directory: String,
@@ -21,6 +35,8 @@ pub struct WPCSettings {
     pub startup: bool,
     pub background: bool,
     pub grayscale: bool,
+
+    pub theme_options: ThemeOptions,
 
     /* plugin flags */
     pub wallhaven: bool,
@@ -39,6 +55,12 @@ pub fn parse(matches: ArgMatches) -> WPCSettings {
     startup: matches.occurrences_of("startup") > 0,
     background: matches.occurrences_of("background") > 0,
     grayscale: matches.occurrences_of("grayscale") > 0,
+    theme_options: ThemeOptions { 
+    set_theme: matches.occurrences_of("set-theme") > 0,
+    theme_th: matches.value_of("theme-threshold").unwrap().parse().unwrap(),
+    theme_dark_only: matches.occurrences_of("theme-dark") > 0,
+    theme_light_only: matches.occurrences_of("theme-light") > 0,
+    },
     wallhaven: matches.occurrences_of("wallhaven") > 0,
     reddit: matches.occurrences_of("reddit") > 0,
     reddit_options: RedditOptions { reddit: matches.value_of("reddit").unwrap().to_string(), reddit_n: matches.value_of("reddit-n").unwrap().parse().unwrap(), reddit_sort: matches.value_of("reddit-sort").unwrap().to_string(), reddit_min_height: matches.value_of("reddit-min-height").unwrap().parse().unwrap(), reddit_min_width: matches.value_of("reddit-min-width").unwrap().parse().unwrap() },
