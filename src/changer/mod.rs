@@ -30,7 +30,7 @@ pub fn change_wallpaper(uri: &str, theme_options: ThemeOptions){
     }
 
     #[cfg(target_os = "windows")]
-    windows::set_wallpaper_win(uri);
+    windows::set_wallpaper_win(uri, theme);
 
 
     #[cfg(target_os = "linux")]
