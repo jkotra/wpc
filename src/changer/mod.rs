@@ -1,6 +1,6 @@
 use crate::{settings::ThemeOptions, misc};
 
-use log::{debug, info};
+use log::info;
 
 #[cfg(target_os = "windows")]
 mod windows;
@@ -10,15 +10,11 @@ mod gnome;
 
 pub fn change_wallpaper(uri: &str, theme_options: ThemeOptions){
 
-    #[cfg(target_os = "windows")]
-    windows::set_wallpaper_win(uri);
-
-
-    #[cfg(target_os = "linux")]
     let mut theme: Option<String> = Option::None;
-    let b_score = misc::brighness_score(uri);
-    info!("brightness_score = {}", b_score);
+
     if theme_options.set_theme{
+        let b_score = misc::brighness_score(uri);
+        info!("brightness_score = {}", b_score);
         if misc::brighness_score(uri) as f32 >= theme_options.theme_th{
                 if theme_options.theme_dark_only{
                     return
@@ -33,6 +29,11 @@ pub fn change_wallpaper(uri: &str, theme_options: ThemeOptions){
         }
     }
 
+    #[cfg(target_os = "windows")]
+    windows::set_wallpaper_win(uri);
+
+
+    #[cfg(target_os = "linux")]
     gnome::change_wallpaper_gnome(uri, theme);
 
 }
