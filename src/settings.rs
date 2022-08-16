@@ -77,6 +77,12 @@ pub fn parse(matches: ArgMatches) -> WPCSettings {
         info!("expanded . to {}", settings.directory);
     }
 
+    if settings.theme_options.set_theme {
+        if settings.theme_options.theme_th > 100.0{
+            settings.theme_options.theme_th = 100.0
+        }
+    }
+
 
     return settings;
 }
