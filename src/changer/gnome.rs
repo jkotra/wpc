@@ -66,21 +66,17 @@ pub fn add_to_startup_gnome() -> Result<bool, Box<dyn std::error::Error>> {
 
     info!("{:?}/wpc.service", sysd_path.as_os_str());
 
-    let startup = format!("
-
-    [Unit]
-    Description=Wallpaper Changer
-    Requires=graphical-session.target
-
-    [Service]
-    Environment='RUST_LOG=info'
-    ExecStart={exe} {args}
-    Restart=always
-    RestartSec=10
-
-    [Install]
-    WantedBy=default.target
-
+    let startup = format!(" \
+     [Unit] \
+    \nDescription=Wallpaper Changer \
+    \nRequires=graphical-session.target \
+    \n\n [Service] \
+    \nEnvironment='RUST_LOG=info' \
+    \nExecStart={exe} {args} \
+    \nRestart=on-failure \
+    \nRestartSec=30 \
+    \n\n [Install] \
+    \nWantedBy=default.target
     ", exe=curr_exe, args=args);
 
     info!("unit file: {}", startup);
