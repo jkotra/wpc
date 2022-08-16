@@ -98,6 +98,7 @@ args:
         long: theme-threshold
         help: the value above which is considered for the light theme.
         takes_value: true
+        help: brightness threshold to determine theme [0 - 100]
         default_value: "50"
 
     - theme-dark:
