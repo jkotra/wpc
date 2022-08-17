@@ -1,5 +1,5 @@
 name: WPC
-version: "1.5.0"
+version: "1.6.0"
 author: Jagadeesh K. <jagadeesh@stdin.top>
 about: Wallpaper changer for Windows/Linux
 args:
@@ -88,3 +88,23 @@ args:
         long: grayscale
         help: convert image to grayscale.
         takes_value: false
+
+    - set-theme:
+        long: set-theme
+        help: set light / dark theme based on the brightness of the wallpaper.
+        takes_value: false
+    
+    - theme-threshold:
+        long: theme-threshold
+        help: the value above which is considered for the light theme.
+        takes_value: true
+        help: brightness threshold to determine theme [0 - 100]
+        default_value: "50"
+
+    - theme-dark:
+        long: "theme-dark"
+        help: "Only set dark theme compatible (set by theme-threshold) wallpapers."
+
+    - theme-light:
+        long: "theme-light"
+        help: "Only set light theme compatible (set by --theme-threshold) wallpapers."

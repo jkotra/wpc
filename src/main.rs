@@ -22,6 +22,7 @@ use web::wallhaven::WallHaven;
 use web::reddit::Reddit;
 
 mod settings;
+use settings::ThemeOptions;
 
 #[tokio::main]
 async fn main() {
@@ -118,7 +119,7 @@ async fn main() {
     }
 
         //TODO: change wallpaper 
-        change_wallpaper_random(&candidates, app_settings.grayscale);
+        change_wallpaper_random(&candidates, app_settings.grayscale, app_settings.theme_options);
         
         wait(app_settings.interval);
         info!("sleeping for {} secs...", app_settings.interval);
@@ -143,7 +144,7 @@ async fn main() {
     }
 }
 
-fn change_wallpaper_random(file_list: &Vec<String>, is_grayscale: bool) {
+fn change_wallpaper_random(file_list: &Vec<String>, is_grayscale: bool, theme_options: ThemeOptions) {
 
     let rand_n = random_n(file_list.len());
     let wp = file_list.get(rand_n).unwrap();
@@ -167,5 +168,6 @@ fn change_wallpaper_random(file_list: &Vec<String>, is_grayscale: bool) {
     
     info!("setting wallpaper = {:?}", wallpaper);
 
-    change_wallpaper(wallpaper.to_str().unwrap());
+    change_wallpaper(wallpaper.to_str().unwrap(), theme_options);
+
 }

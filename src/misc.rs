@@ -205,6 +205,31 @@ pub fn is_linux_gnome_de() -> bool {
     return false;
 }
 
+pub fn brighness_score(wp: &str) -> i64{
+
+    let im = image::open(wp).unwrap();
+    let rgb = im.to_rgba8();
+    let pix = rgb.pixels();
+
+    let mut total: i64 = 0;
+    let len = pix.len() as i64;
+
+    for p in pix{
+        //println!("{:?}", p.0);
+        total += p.0[0] as i64;
+        total += p.0[1] as i64;
+        total += p.0[2] as i64;
+    }
+
+    let mean = total / len;
+    
+    if mean == 0{
+        return 0;
+    }
+
+    return mean * 100 / (255 * 3);
+
+}
 
 #[cfg(test)]
 mod misc_tests {
