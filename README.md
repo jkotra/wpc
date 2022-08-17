@@ -25,8 +25,7 @@ Binary will be located at `target/release/`
 # Usage  
   
 ```
-
-WPC 1.4.0
+WPC 1.6.0
 Jagadeesh K. <jagadeesh@stdin.top>
 Wallpaper changer for Windows/Linux
 
@@ -34,13 +33,16 @@ USAGE:
     wpc [FLAGS] [OPTIONS] --directory <directory>
 
 FLAGS:
-        --background    Run WPC in background.
-        --grayscale     convert image to grayscale.
-    -h, --help          Prints help information
-    -l, --local         Include only local files.
-    -S, --startup       start WPC at startup.
-    -V, --version       Prints version information
-    -w, --wallhaven     wallhaven.cc plugin.
+        --background     Run WPC in background.
+        --grayscale      convert image to grayscale.
+    -h, --help           Prints help information
+    -l, --local          Include only local files.
+        --set-theme      set light / dark theme based on the brightness of the wallpaper.
+    -S, --startup        start WPC at startup.
+        --theme-dark     Only set dark theme compatible (set by theme-threshold) wallpapers.
+        --theme-light    Only set light theme compatible (set by --theme-threshold) wallpapers.
+    -V, --version        Prints version information
+    -w, --wallhaven      wallhaven.cc plugin.
 
 OPTIONS:
     -d, --directory <directory>                    directory of wallpapers.
@@ -51,8 +53,8 @@ OPTIONS:
         --reddit-min-width <reddit-min-width>      Image.width >= reddit-min-width [default: 1920]
         --reddit-n <reddit-n>                      no. of images to download from subreddit. [default: 1]
         --reddit-sort <reddit-sort>                Reddit sorting order. [ Hot, New, Top, Rising ] [default: hot]
+        --theme-threshold <theme-threshold>        brightness threshold to determine theme [0 - 100] [default: 50]
     -u, --update <update>                          Update interval in Seconds. [default: 3600]
-
 
 ```
 

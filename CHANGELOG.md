@@ -1,3 +1,9 @@
+# 1.6.0
+
+- [**NEW**] set theme based on wallpaper brightness.
+- [**FIX**] [WINDOWS] adding to startup no longer requires admin privileges.
+- [**FIX**] [LINUX] fix padding issue in systemd unit file.
+
 # 1.5.0
 
 ---
