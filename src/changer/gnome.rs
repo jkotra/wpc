@@ -3,23 +3,7 @@ use gio::{Settings};
 use log::debug;
 use log::{info};
 use std::path::PathBuf;
-use serde::{Deserialize, Serialize};
 use crate::misc;
-
-#[derive(Debug, Serialize, Deserialize, PartialEq)]
-struct GnomeVersion {
-    platform: i32,
-    minor: i32,
-    micro: i32,
-    distributor: String
-}
-
-fn get_gnome_version() -> GnomeVersion {
-    let gv = serde_xml_rs::from_str(
-        &std::fs::read_to_string("/usr/share/gnome/gnome-version.xml").unwrap()
-    ).unwrap();
-    return gv;
-}
 
 pub fn change_wallpaper_gnome(file: &str, theme: Option<String>) {
     let pb = PathBuf::from(file);
@@ -41,16 +25,11 @@ pub fn change_wallpaper_gnome(file: &str, theme: Option<String>) {
         Err(why) => debug!("{:?}", why)
     }
 
-    let version = get_gnome_version();
-    debug!("{:?}", version);
-
-    if version.platform >= 42 {
-        match bg_settings.set_string("picture-uri-dark", wp.as_str()) {
-            Ok(()) => (),
-            Err(why) => debug!("{:?}", why)
-        }
+    match bg_settings.set_string("picture-uri-dark", wp.as_str()) {
+        Ok(()) => (),
+        Err(why) => debug!("picture-uri-dark error: {:?}", why)
     }
-    
+
 }
 
 pub fn add_to_startup_gnome() -> Result<bool, Box<dyn std::error::Error>> {
