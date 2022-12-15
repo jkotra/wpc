@@ -1,3 +1,7 @@
+# 1.6.1
+
+- Fix Dark Theme Wallpaper Setting on Gnome >= 43
+
 # 1.6.0
 
 - [**NEW**] set theme based on wallpaper brightness.
