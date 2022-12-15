@@ -3,9 +3,7 @@ use gio::{Settings};
 use log::debug;
 use log::{info};
 use std::path::PathBuf;
-use serde::{Deserialize, Serialize};
 use crate::misc;
-
 
 pub fn change_wallpaper_gnome(file: &str, theme: Option<String>) {
     let pb = PathBuf::from(file);
