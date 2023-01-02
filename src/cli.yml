@@ -16,6 +16,11 @@ args:
         help: Include only local files.
         takes_value: false
 
+    - dynamic:
+        long: dynamic
+        help: Dynamically set wallpaper based on time.
+        default_value: "config.json"
+
     - wallhaven:
         short: w
         long: wallhaven

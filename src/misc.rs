@@ -1,10 +1,14 @@
 use std::io;
 use std::fs::File;
 use std::path::PathBuf;
+use std::str::FromStr;
 extern crate rand;
+use chrono::{Timelike};
 use rand::Rng;
+use serde::{Deserialize, Serialize};
+use image::{GenericImageView, ImageBuffer};
 
-use log::{debug, error};
+use log::{debug, error, info};
 
 use std::env::current_exe;
 
@@ -18,6 +22,18 @@ use std::sync::mpsc::channel;
 use std::sync::mpsc::{Sender};
 use std::time::Duration;
 
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct SingleConfig {
+    pub hour: u32,
+    pub path: String,
+    pub darkmode: Option<bool>
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct DynamicConfig {
+    pub configs: Vec<SingleConfig>
+}
 
 pub fn notify_event(dir: std::sync::Arc<String>, main_thread_tx: Sender<bool>,) -> () {
     let dir = dir.as_str();
@@ -231,8 +247,100 @@ pub fn brighness_score(wp: &str) -> i64{
 
 }
 
+pub fn get_dynamic_wp(config_file: &str) -> Option<SingleConfig> {
+
+    let t = chrono::offset::Local::now();
+
+    let config = std::path::PathBuf::from_str(config_file)
+    .unwrap();
+
+    if !config.exists(){
+        // can files and create json
+        let mut files = update_file_list(config.parent().unwrap().to_str().unwrap(), -1);
+        files.sort();
+        let mut interval =  23 /  files.len();
+        let mut hour = 0;
+        if interval < 1 { interval = 1 };
+        info!("calc i={} h={}", interval, hour);
+        let mut generated: Vec<SingleConfig> = Vec::new();
+
+        for f in files {
+            let c = SingleConfig { hour: hour as u32, path: f, darkmode: Some(false) };
+            generated.push(c);
+            hour += interval;
+            debug!("generated SingleConfig");
+        }
+
+        let stub = std::fs::File::create(config.clone());
+        let writer = std::io::BufWriter::new(stub.unwrap());
+        let content = DynamicConfig {configs: generated};
+        
+        match serde_json::to_writer_pretty(writer, &content){
+            Ok(()) => info!("config file generated!"),
+            Err(err) => {
+                error!("{:?}", err);
+                return None;
+            }
+        };
+
+    }
+
+    let data = match std::fs::read_to_string(config.clone()) {
+        Ok(s) => s,
+        Err(err) => {
+            error!("{:?}", err);
+            return None
+        }
+    };
+
+    let d: DynamicConfig = match serde_json::from_str(data.as_str()){
+        Ok(d) => d,
+        Err(err) => {
+            error!("{:?}", err);
+            return None
+        }
+    };
+
+    let mut wp: Option<SingleConfig> = None;
+
+    for mut c in d.configs{
+        debug!("c.path={} c.hour={} t.hour={}", c.path, c.hour, t.hour());
+        if c.hour <= t.hour() {
+            // check if image exists at path of *.json path
+            let pbuf = config.parent().unwrap().join(&c.path);
+            if pbuf.exists() {
+                c.path = pbuf.to_str().unwrap().to_string();
+                wp = Some(c)
+            }
+        }
+    }
+
+    log::info!("selected dynamic config = {:?}", wp);
+
+    return wp;
+
+}
+
+pub fn secs_till_next_hour() -> u32 {
+    let t = chrono::offset::Local::now();
+    let min = 59 - t.minute();
+    
+    let next_hr = t + chrono::Duration::minutes(min as i64);
+    let next_hr = next_hr - chrono::Duration::seconds(next_hr.second() as i64);
+
+    let left = next_hr.timestamp() - t.timestamp();
+    return left as u32;
+}
+
 #[cfg(test)]
 mod misc_tests {
+    use std::str::FromStr;
+
+    use chrono::Timelike;
+    use image::{ImageBuffer, RgbImage};
+
+    use super::get_dynamic_wp;
+
 
     #[tokio::test]
     async fn async_download_test() {
@@ -247,6 +355,31 @@ mod misc_tests {
         
         let test_file_path = std::path::PathBuf::from(&files[0]);
         assert_eq!(test_file_path.exists(), true);
+    }
+
+    #[tokio::test]
+    async fn dynamic_wallpaper_test() {
+
+        let t = chrono::Local::now();
+        let pbuf = std::fs::canonicalize("tests").unwrap();
+
+        // generate dummy images
+        let img: RgbImage = ImageBuffer::new(128, 128);
+        img.save("tests/1.jpg").unwrap();
+        img.save("tests/2.jpg").unwrap();
+
+        let cfile = pbuf.clone().join("config.json");
+        if cfile.exists() {
+            std::fs::remove_file(cfile.clone()).unwrap();
+        };
+
+        let chosen = get_dynamic_wp(cfile.to_str().unwrap()).unwrap();
+        if t.hour() <= 0 {
+            assert_eq!(chosen.path, pbuf.join("1.jpg").to_str().unwrap().to_owned());
+        }
+        else{
+            assert_eq!(chosen.path, pbuf.join("2.jpg").to_str().unwrap().to_owned());
+        }
     }
 
 }

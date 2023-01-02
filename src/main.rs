@@ -7,7 +7,7 @@ use std::ffi::OsStr;
 use std::path::PathBuf;
 use std::sync::mpsc::channel;
 
-use log::{debug, info};
+use log::{debug, info, warn};
 
 #[allow(unused_imports)]
 use crate::misc::*;
@@ -31,7 +31,7 @@ async fn main() {
 
     let yaml = load_yaml!("cli.yml");
     let matches = App::from_yaml(yaml).get_matches();
-    let app_settings = settings::parse(matches);
+    let mut app_settings = settings::parse(matches);
 
     info!("{:?}", app_settings);
 
@@ -73,30 +73,8 @@ async fn main() {
     }
     
 
-    /* Inital while loop until we have atleast 1 image */
     let mut time_since = std::time::Instant::now();
     let mut candidates: Vec<String> = vec![];
-
-    while candidates.len() == 0{
-
-        if app_settings.local{
-            candidates = misc::update_file_list(&app_settings.directory, app_settings.maxage);
-        }
-
-        if app_settings.wallhaven{
-            let mut files = wallhaven_cc.update(&app_settings.directory, app_settings.maxage).await;
-            candidates.append(&mut files);
-        }
-
-        if app_settings.reddit{
-            let mut files = reddit_com.update(&app_settings.directory, app_settings.maxage).await;
-            candidates.append(&mut files);
-        }
-
-        info!("Initial candidates = {}", candidates.len());
-        wait(1);
-    }
-
     
     let watch_dir = std::sync::Arc::new(app_settings.directory.clone());
     let (tx, rx) = channel();
@@ -105,6 +83,7 @@ async fn main() {
         misc::notify_event(watch_dir, tx);   
     });
 
+    let mut do_initial_update = true;
     
     // main loop
     loop {
@@ -113,20 +92,36 @@ async fn main() {
         match rx.try_recv() {
             Ok(_) => { candidates = misc::update_file_list(&app_settings.directory, app_settings.maxage) },
             Err(_) => ()
+            }
+        debug!("[rx update] candidates = {}", candidates.len());
         }
 
-        debug!("candidates = {}", candidates.len());
-    }
-
-        //TODO: change wallpaper 
+        if candidates.len() > 0 {
         change_wallpaper_random(&candidates, app_settings.grayscale, app_settings.theme_options);
-        
-        wait(app_settings.interval);
         info!("sleeping for {} secs...", app_settings.interval);
+        wait(app_settings.interval);
+        };
 
-        if time_since.elapsed().as_secs() >= app_settings.update {
+        if (time_since.elapsed().as_secs() >= app_settings.update) || do_initial_update {
 
-            let mut candidates: Vec<String> = vec![];
+            debug!("updating....");
+
+            if app_settings.dynamic {
+                candidates = match get_dynamic_wp(&app_settings.dynamic_config_file) {
+                    Some(x) => {
+                        match x.darkmode {
+                            Some(val) => {
+                                app_settings.theme_options.force_dark_theme = val;
+                            },
+                            None => ()
+                        }
+                        vec![x.path]
+                    },
+                    None => vec![]
+                };
+                app_settings.update = secs_till_next_hour() as u64;
+                app_settings.interval = app_settings.update;
+            }
 
             if app_settings.wallhaven {
                 let mut files = wallhaven_cc.update(&app_settings.directory, app_settings.maxage).await;
@@ -140,6 +135,13 @@ async fn main() {
 
             time_since = std::time::Instant::now();
             info!("updated candidates = {}", candidates.len());
+            do_initial_update = false;
+
+            if candidates.len() == 0 {
+                warn!("no updates available. sleeping for {} seconds.", app_settings.update);
+                wait(app_settings.update);
+            }
+
         }
     }
 }
@@ -155,7 +157,7 @@ fn change_wallpaper_random(file_list: &Vec<String>, is_grayscale: bool, theme_op
     debug!("extension = {}", wallpaper_ext);
 
     if is_grayscale{
-        info!("applying grayscale...");
+        info!("applying grayscale to {}", wallpaper.to_str().unwrap());
         let mut gs_pf = PathBuf::from(std::env::temp_dir());
         gs_pf.push(format!("gs.{}", wallpaper_ext));
         let img = image::open(wallpaper).unwrap();
