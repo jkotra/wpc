@@ -66,7 +66,7 @@ pub fn parse(matches: ArgMatches) -> WPCSettings {
     reddit_options: RedditOptions { reddit: matches.value_of("reddit").unwrap().to_string(), reddit_n: matches.value_of("reddit-n").unwrap().parse().unwrap(), reddit_sort: matches.value_of("reddit-sort").unwrap().to_string(), reddit_min_height: matches.value_of("reddit-min-height").unwrap().parse().unwrap(), reddit_min_width: matches.value_of("reddit-min-width").unwrap().parse().unwrap() },
     local: matches.occurrences_of("local") > 0,
     dynamic: matches.occurrences_of("dynamic") > 0,
-    dynamic_config_file: std::fs::canonicalize(matches.value_of("dynamic").unwrap()).unwrap().to_str().unwrap().to_owned()
+    dynamic_config_file: matches.value_of("dynamic").unwrap().to_owned()
     };
 
     if !settings.wallhaven && !settings.reddit && !settings.local{
@@ -86,6 +86,8 @@ pub fn parse(matches: ArgMatches) -> WPCSettings {
     }
 
     if settings.dynamic {
+        settings.local = false;
+        settings.dynamic_config_file = std::fs::canonicalize(settings.dynamic_config_file).unwrap().to_str().unwrap().to_owned();
         settings.update = secs_till_next_hour() as u64;
         settings.interval = settings.update;
     }

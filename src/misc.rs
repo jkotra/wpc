@@ -326,9 +326,17 @@ pub fn secs_till_next_hour() -> u32 {
     let min = 59 - t.minute();
     
     let next_hr = t + chrono::Duration::minutes(min as i64);
-    let next_hr = next_hr - chrono::Duration::seconds(next_hr.second() as i64);
+    
+    //let next_hr = next_hr - chrono::Duration::seconds(next_hr.second() as i64);
 
-    let left = next_hr.timestamp() - t.timestamp();
+    let mut left = next_hr.timestamp() - t.timestamp();
+
+    debug!("secs left = {}", left);
+    
+    if left == 0 {
+        left = 60;
+    };
+
     return left as u32;
 }
 

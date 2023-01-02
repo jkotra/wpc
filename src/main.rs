@@ -123,6 +123,11 @@ async fn main() {
                 app_settings.interval = app_settings.update;
             }
 
+            if app_settings.local {
+                let mut files = update_file_list(&app_settings.directory, app_settings.maxage);
+                candidates.append(&mut files);
+            }
+
             if app_settings.wallhaven {
                 let mut files = wallhaven_cc.update(&app_settings.directory, app_settings.maxage).await;
                 candidates.append(&mut files);
