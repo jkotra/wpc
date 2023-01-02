@@ -87,7 +87,7 @@ pub fn parse(matches: ArgMatches) -> WPCSettings {
 
     if settings.dynamic {
         settings.update = secs_till_next_hour() as u64;
-        settings.interval = secs_till_next_hour() as u64;
+        settings.interval = settings.update;
     }
 
 
