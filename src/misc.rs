@@ -323,19 +323,12 @@ pub fn get_dynamic_wp(config_file: &str) -> Option<SingleConfig> {
 
 pub fn secs_till_next_hour() -> u32 {
     let t = chrono::offset::Local::now();
-    let min = 59 - t.minute();
+    let min = 60 - t.minute();
     
     let next_hr = t + chrono::Duration::minutes(min as i64);
-    
-    //let next_hr = next_hr - chrono::Duration::seconds(next_hr.second() as i64);
+    let left = next_hr.timestamp() - t.timestamp();
 
-    let mut left = next_hr.timestamp() - t.timestamp();
-
-    debug!("secs left = {}", left);
-    
-    if left == 0 {
-        left = 60;
-    };
+    debug!("secs left untl next hour = {}", left);
 
     return left as u32;
 }
