@@ -3,10 +3,9 @@ use std::fs::File;
 use std::path::PathBuf;
 use std::str::FromStr;
 extern crate rand;
-use chrono::{Timelike};
+use chrono::Timelike;
 use rand::Rng;
 use serde::{Deserialize, Serialize};
-use image::{GenericImageView, ImageBuffer};
 
 use log::{debug, error, info};
 
@@ -335,12 +334,11 @@ pub fn secs_till_next_hour() -> u32 {
 
 #[cfg(test)]
 mod misc_tests {
-    use std::str::FromStr;
 
     use chrono::Timelike;
     use image::{ImageBuffer, RgbImage};
 
-    use super::get_dynamic_wp;
+    use super::{get_dynamic_wp, update_file_list};
 
 
     #[tokio::test]
@@ -358,16 +356,20 @@ mod misc_tests {
         assert_eq!(test_file_path.exists(), true);
     }
 
-    #[tokio::test]
-    async fn dynamic_wallpaper_test() {
-
-        let t = chrono::Local::now();
-        let pbuf = std::fs::canonicalize("tests").unwrap();
-
+    fn gen_dummy_images(){
         // generate dummy images
         let img: RgbImage = ImageBuffer::new(128, 128);
         img.save("tests/1.jpg").unwrap();
         img.save("tests/2.jpg").unwrap();
+    }
+
+    #[test]
+    fn dynamic_wallpaper_test() {
+
+        let t = chrono::Local::now();
+        let pbuf = std::fs::canonicalize("tests").unwrap();
+
+        gen_dummy_images();
 
         let cfile = pbuf.clone().join("config.json");
         if cfile.exists() {
@@ -375,12 +377,21 @@ mod misc_tests {
         };
 
         let chosen = get_dynamic_wp(cfile.to_str().unwrap()).unwrap();
-        if t.hour() <= 0 {
-            assert_eq!(chosen.path, pbuf.join("1.jpg").to_str().unwrap().to_owned());
-        }
-        else{
+        if t.hour() >= 11 {
             assert_eq!(chosen.path, pbuf.join("2.jpg").to_str().unwrap().to_owned());
         }
+        else{
+            assert_eq!(chosen.path, pbuf.join("1.jpg").to_str().unwrap().to_owned());
+        }
+    }
+
+    #[test]
+    fn local_mode() {
+
+        gen_dummy_images();
+        let files = update_file_list(std::fs::canonicalize("tests").unwrap().to_str().unwrap(), -1);
+        assert_eq!(files.len(), 2);
+
     }
 
 }
