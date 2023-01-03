@@ -1,5 +1,7 @@
+use std::str::FromStr;
+
 use clap::ArgMatches;
-use log::{info};
+use log::info;
 
 use crate::misc::secs_till_next_hour;
 
@@ -87,7 +89,12 @@ pub fn parse(matches: ArgMatches) -> WPCSettings {
 
     if settings.dynamic {
         settings.local = false;
-        settings.dynamic_config_file = std::fs::canonicalize(settings.dynamic_config_file).unwrap().to_str().unwrap().to_owned();
+        let pbuf = std::path::PathBuf::from_str(&settings.dynamic_config_file).unwrap();
+        
+        let parent = pbuf.parent().unwrap().canonicalize().unwrap_or(std::env::current_dir().unwrap());
+        let file = pbuf.file_name().unwrap().to_str().unwrap();
+        settings.dynamic_config_file = parent.join(file).to_str().unwrap().to_owned();
+
         settings.update = secs_till_next_hour() as u64;
         settings.interval = settings.update;
     }
