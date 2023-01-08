@@ -396,7 +396,7 @@ mod misc_tests {
             assert_eq!(chosen.path.ends_with("2.jpg"), true);
         }
         else{
-            assert_eq!(chosen.path.ends_with("2.jpg"), true);
+            assert_eq!(chosen.path.ends_with("1.jpg"), true);
         }
     }
 
