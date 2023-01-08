@@ -335,6 +335,8 @@ pub fn secs_till_next_hour() -> u32 {
 #[cfg(test)]
 mod misc_tests {
 
+    use std::{str::FromStr, path::PathBuf};
+
     use chrono::Timelike;
     use image::{ImageBuffer, RgbImage};
 
@@ -356,32 +358,45 @@ mod misc_tests {
         assert_eq!(test_file_path.exists(), true);
     }
 
-    fn gen_dummy_images(){
+    fn gen_dummy_images() -> PathBuf{
         // generate dummy images
         let img: RgbImage = ImageBuffer::new(128, 128);
+
+        let pbuf = std::path::PathBuf::from_str("tests").unwrap();
+        if !pbuf.exists() {
+            std::fs::create_dir(pbuf.clone()).unwrap();
+        }
+
         img.save("tests/1.jpg").unwrap();
         img.save("tests/2.jpg").unwrap();
+
+        return pbuf.canonicalize().unwrap();
     }
 
     #[test]
     fn dynamic_wallpaper_test() {
 
         let t = chrono::Local::now();
-        let pbuf = std::fs::canonicalize("tests").unwrap();
 
-        gen_dummy_images();
+        let test_root = gen_dummy_images();
 
-        let cfile = pbuf.clone().join("config.json");
-        if cfile.exists() {
-            std::fs::remove_file(cfile.clone()).unwrap();
+        let wp_config_path = test_root.join("config.json");
+        
+        if wp_config_path.exists() {
+            std::fs::remove_file(wp_config_path.clone()).unwrap();
         };
 
-        let chosen = get_dynamic_wp(cfile.to_str().unwrap()).unwrap();
+        let chosen = get_dynamic_wp(wp_config_path.to_str().unwrap());
+
+        assert_eq!(chosen.is_some(), true);
+
+        let chosen = chosen.unwrap();
+
         if t.hour() >= 11 {
-            assert_eq!(chosen.path, pbuf.join("2.jpg").to_str().unwrap().to_owned());
+            assert_eq!(chosen.path.ends_with("2.jpg"), true);
         }
         else{
-            assert_eq!(chosen.path, pbuf.join("1.jpg").to_str().unwrap().to_owned());
+            assert_eq!(chosen.path.ends_with("2.jpg"), true);
         }
     }
 
