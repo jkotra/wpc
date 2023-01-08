@@ -84,6 +84,47 @@ The above command(s) will change wallpaper(that are located at `-d`) every 60 se
 *(Tested on Windows 10)*
 
 
+## Dynamic Wallpaper
+
+`--dynamic` option can be used to set dynamic wallpaper based on system time. the wallpaper is chosen from the provided `json` file.
+
+**example**:
+
+```
+./wpc -d . --dynamic ~/Pictures/Fluent/config.json
+```
+
+`config.json`:
+
+```json
+{
+  "configs": [
+    {
+      "hour": 0,
+      "path": "Fluent-2.jpg",
+      "darkmode": false
+    },
+    {
+      "hour": 11,
+      "path": "Fluent-1.jpg",
+      "darkmode": false
+    },
+    {
+      "hour": 16,
+      "path": "Fluent-2.jpg",
+      "darkmode": true
+    },
+    {
+      "hour": 18,
+      "path": "Fluent-3.jpg",
+      "darkmode": true
+    }
+  ]
+}
+```
+
+**Note**: Wallpaper hour is evaluated from 00 (Midnight). Make sure to edit your config accordingly. 
+
 ---
 
 # Web Plugins
@@ -118,12 +159,6 @@ Complete [wallhaven API](https://wallhaven.cc/help/api) is implemented in [api/w
 
 use `RUST_LOG={LEVEL}` as prefix.
 
-example:
+example: `RUST_LOG=debug ./wpc -d .`
 
-`RUST_LOG=debug ./wpc -d .`
-
-on windows / powershell:
-
-`$env:RUST_LOG = "DEBUG"`
-
-`./wpc.exe -d .`
+on windows / powershell: `$env:RUST_LOG = "DEBUG"`
