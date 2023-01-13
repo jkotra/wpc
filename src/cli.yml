@@ -1,5 +1,5 @@
 name: WPC
-version: "1.6.0"
+version: "1.7.0"
 author: Jagadeesh K. <jagadeesh@stdin.top>
 about: Wallpaper changer for Windows/Linux
 args:
@@ -15,6 +15,11 @@ args:
         long: local
         help: Include only local files.
         takes_value: false
+
+    - dynamic:
+        long: dynamic
+        help: Dynamically set wallpaper based on time.
+        default_value: "config.json"
 
     - wallhaven:
         short: w

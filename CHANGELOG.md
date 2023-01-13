@@ -1,3 +1,7 @@
+# 1.7.0
+
+- [**NEW**] Dynamic wallpaper
+
 # 1.6.1
 
 - Fix Dark Theme Wallpaper Setting on Gnome >= 43
