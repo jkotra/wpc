@@ -25,7 +25,7 @@ Binary will be located at `target/release/`
 # Usage  
   
 ```
-WPC 1.6.0
+WPC 1.7.0
 Jagadeesh K. <jagadeesh@stdin.top>
 Wallpaper changer for Windows/Linux
 
@@ -46,6 +46,7 @@ FLAGS:
 
 OPTIONS:
     -d, --directory <directory>                    directory of wallpapers.
+        --dynamic <dynamic>                        Dynamically set wallpaper based on time. [default: config.json]
     -i, --interval <interval>                      interval in Seconds. [default: 300]
         --maxage <maxage>                          maximum age of wallpaper in Hours(h). [default: -1]
     -r, --reddit <reddit>                          Reddit subreddit (/r/something) [default: wallpaper]
@@ -55,7 +56,6 @@ OPTIONS:
         --reddit-sort <reddit-sort>                Reddit sorting order. [ Hot, New, Top, Rising ] [default: hot]
         --theme-threshold <theme-threshold>        brightness threshold to determine theme [0 - 100] [default: 50]
     -u, --update <update>                          Update interval in Seconds. [default: 3600]
-
 ```
 
 ## How to use?
