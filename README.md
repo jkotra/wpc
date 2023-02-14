@@ -1,6 +1,7 @@
 # WPC  
   
 [![Build Status](https://travis-ci.org/jkotra/wpc.svg?branch=master)](https://travis-ci.org/jkotra/wpc) ![](https://img.shields.io/github/languages/code-size/jkotra/wpc)
+![](https://img.shields.io/aur/version/wpc)
 
 WPC *stands for* **W**all **P**aper **C**hanger.
   
@@ -10,20 +11,9 @@ WPC is a wallpaper changer for Microsoft Windows and Linux.
 
 ---
 
-# Install
+<details>
+  <summary> Usage (<b>-h</b>) </summary>
 
-[Available on AUR](https://aur.archlinux.org/packages/wpc)
-
-## Building  
-
-`cargo build --release`  
-
-Binary will be located at `target/release/`
-
----
-
-# Usage  
-  
 ```
 WPC 1.7.0
 Jagadeesh K. <jagadeesh@stdin.top>
@@ -57,40 +47,43 @@ OPTIONS:
         --theme-threshold <theme-threshold>        brightness threshold to determine theme [0 - 100] [default: 50]
     -u, --update <update>                          Update interval in Seconds. [default: 3600]
 ```
+</details>
+
+---
+
+# Installation
+
+## Building  
+
+`cargo build --release`  
+
+Binary will be located at `target/release/`
+
+---
 
 ## How to use?
 
 **WPC** is a command-line application i.e you need to run it from a command prompt or terminal.
 
-1. *cd* to the directory which contains wpc executable.
-2. command line applications are launched using the prefix `./` on linux.
-3. edit and play with various options to your liking.
-
 ## Example
 
-
-### Linux
-
-`./wpc -d . -i 60 -u 360 --startup`
-
-
-### Windows (10+)
-
-`wpc.exe -d . -i 60 -u 360 --startup`
+| **Platform** |              **Command**              |
+|--------------|:-------------------------------------:|
+| Linux        | `./wpc -d . -i 60 -u 360 --startup`   |
+| Windows      | `wpc.exe -d . -i 60 -u 360 --startup` |
 
 
 The above command(s) will change wallpaper(that are located at `-d`) every 60 seconds, check for new images every 360 seconds, and add **WPC** to startup with the same settings.
-
-*(Tested on Windows 10)*
 
 
 ## Dynamic Wallpaper
 
 `--dynamic` option can be used to set dynamic wallpaper based on system time. the wallpaper is chosen from the provided `json` file.
 
-**example**:
+<details>
+  <summary> example <code>config.json</code> </summary>
 
-```
+```sh
 ./wpc -d . --dynamic ~/Pictures/Fluent/config.json
 ```
 
@@ -123,42 +116,33 @@ The above command(s) will change wallpaper(that are located at `-d`) every 60 se
 }
 ```
 
+
 **Note**: Wallpaper hour is evaluated from 00 (Midnight). Make sure to edit your config accordingly. 
+
+</details>
 
 ---
 
 # Web Plugins
 
-### wallhaven.cc
-
-`./wpc -d . -w`
-
-The program will run setup wizard if `wallhaven.json` file is not found.enter your username, collection ID and API key(required only for private collections).
-
-
-### Reddit.com
-
-```
-./wpc -d . --reddit {subreddit_name} --reddit-n {quantity} --reddit-sort {hot|new|rising|top} --reddit-min-width 1920 --reddit-min-height 1080
-```
-- Reddit example:
-
-```
-./wpc -d . --reddit art --reddit-n 10 --reddit-sort top --reddit-min-width 1920 --reddit-min-height 1080
-```
+| **Plugin** |                                                 **Example**                                                |
+|------------|:----------------------------------------------------------------------------------------------------------:|
+| Wallhaven  | `./wpc -d . -w`                                                                                            |
+| Reddit     | `./wpc -d . --reddit art --reddit-n 10 --reddit-sort top --reddit-min-width 1920 --reddit-min-height 1080` |
 
 ---
 
-# wallhaven API
+# Misc.
+
+## wallhaven API
 
 Complete [wallhaven API](https://wallhaven.cc/help/api) is implemented in [api/wallhaven.rs](src/web/wallhaven_api.rs)
 
 ---
 
-# Debug
+## Debug
 
-use `RUST_LOG={LEVEL}` as prefix.
-
-example: `RUST_LOG=debug ./wpc -d .`
-
-on windows / powershell: `$env:RUST_LOG = "DEBUG"`
+| **Plugin** |                                          **Environment Variable**                                          |
+|------------|:----------------------------------------------------------------------------------------------------------:|
+| Wallhaven  | `./wpc -d . -w`                                                                                            |
+| Reddit     | `./wpc -d . --reddit art --reddit-n 10 --reddit-sort top --reddit-min-width 1920 --reddit-min-height 1080` |
