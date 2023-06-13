@@ -34,7 +34,7 @@ pub enum TriggerArg {
     ThemeLightOnly,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Default, Deserialize)]
 pub struct TriggerConfig {
     pub enabled: bool,
     pub bin: String,
@@ -91,7 +91,7 @@ pub fn parse(matches: ArgMatches) -> WPCSettings {
     dynamic: matches.occurrences_of("dynamic") > 0,
     dynamic_config_file: matches.value_of("dynamic").unwrap().to_owned(),
 
-    trigger_config: load_trigger_config(matches.value_of("trigger").unwrap().to_string()).unwrap()
+    trigger_config: load_trigger_config(matches.value_of("trigger").unwrap().to_string()).unwrap_or(TriggerConfig { ..Default::default() })
 
     };
 
