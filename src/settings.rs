@@ -2,8 +2,10 @@ use std::str::FromStr;
 
 use clap::ArgMatches;
 use log::info;
+use serde::{Deserialize};
+use strum_macros::Display;
 
-use crate::misc::secs_till_next_hour;
+use crate::misc::{secs_till_next_hour, load_trigger_config};
 
 #[derive(Default, Debug)]
 pub struct RedditOptions {
@@ -14,13 +16,30 @@ pub struct RedditOptions {
     pub reddit_min_width: u32,
 }
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Default, Copy, Clone)]
 pub struct ThemeOptions {
     pub set_theme: bool,
+    pub grayscale: bool,
     pub force_dark_theme: bool,
     pub theme_th: f32,
     pub theme_dark_only: bool,
     pub theme_light_only: bool,
+}
+
+#[derive(Debug, Deserialize, Display)]
+pub enum TriggerArg {
+    Grayscale,
+    Brightness,
+    ThemeDarkOnly,
+    ThemeLightOnly,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct TriggerConfig {
+    pub enabled: bool,
+    pub bin: String,
+    pub file: String,
+    pub args: Vec<TriggerArg>
 }
 
 #[derive(Debug)]
@@ -33,9 +52,9 @@ pub struct WPCSettings {
     /* global application flags */
     pub startup: bool,
     pub background: bool,
-    pub grayscale: bool,
 
     pub theme_options: ThemeOptions,
+    pub trigger_config: TriggerConfig,
 
     /* plugin flags */
     pub wallhaven: bool,
@@ -55,20 +74,25 @@ pub fn parse(matches: ArgMatches) -> WPCSettings {
     maxage: if matches.occurrences_of("maxage") > 0 { matches.value_of("maxage").unwrap().parse().unwrap() } else { -1 },
     startup: matches.occurrences_of("startup") > 0,
     background: matches.occurrences_of("background") > 0,
-    grayscale: matches.occurrences_of("grayscale") > 0,
+
     theme_options: ThemeOptions { 
     set_theme: matches.occurrences_of("set-theme") > 0,
+    grayscale: matches.occurrences_of("grayscale") > 0,
     force_dark_theme: false,
     theme_th: matches.value_of("theme-threshold").unwrap().parse().unwrap(),
     theme_dark_only: matches.occurrences_of("theme-dark") > 0,
     theme_light_only: matches.occurrences_of("theme-light") > 0,
     },
+
     wallhaven: matches.occurrences_of("wallhaven") > 0,
     reddit: matches.occurrences_of("reddit") > 0,
     reddit_options: RedditOptions { reddit: matches.value_of("reddit").unwrap().to_string(), reddit_n: matches.value_of("reddit-n").unwrap().parse().unwrap(), reddit_sort: matches.value_of("reddit-sort").unwrap().to_string(), reddit_min_height: matches.value_of("reddit-min-height").unwrap().parse().unwrap(), reddit_min_width: matches.value_of("reddit-min-width").unwrap().parse().unwrap() },
     local: matches.occurrences_of("local") > 0,
     dynamic: matches.occurrences_of("dynamic") > 0,
-    dynamic_config_file: matches.value_of("dynamic").unwrap().to_owned()
+    dynamic_config_file: matches.value_of("dynamic").unwrap().to_owned(),
+
+    trigger_config: load_trigger_config(matches.value_of("trigger").unwrap().to_string()).unwrap()
+
     };
 
     if !settings.wallhaven && !settings.reddit && !settings.local{

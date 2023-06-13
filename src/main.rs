@@ -22,7 +22,7 @@ use web::wallhaven::WallHaven;
 use web::reddit::Reddit;
 
 mod settings;
-use settings::ThemeOptions;
+use settings::{ThemeOptions, TriggerConfig};
 
 #[tokio::main]
 async fn main() {
@@ -97,7 +97,7 @@ async fn main() {
         }
 
         if candidates.len() > 0 {
-        change_wallpaper_random(&candidates, app_settings.grayscale, app_settings.theme_options);
+        change_wallpaper_random(&candidates, app_settings.theme_options, &app_settings.trigger_config);
         info!("sleeping for {} secs...", app_settings.interval);
         wait(app_settings.interval);
         };
@@ -151,30 +151,23 @@ async fn main() {
     }
 }
 
-fn change_wallpaper_random(file_list: &Vec<String>, is_grayscale: bool, theme_options: ThemeOptions) {
+fn change_wallpaper_random(file_list: &Vec<String>, theme_options: ThemeOptions, trigger_config: &TriggerConfig) {
 
     let rand_n = random_n(file_list.len());
     let wp = file_list.get(rand_n).unwrap();
 
     let mut wallpaper = PathBuf::from(wp);
-    let wallpaper_ext = wallpaper.extension().and_then(OsStr::to_str).unwrap();
 
-    debug!("extension = {}", wallpaper_ext);
-
-    if is_grayscale{
+    if theme_options.grayscale{
         info!("applying grayscale to {}", wallpaper.to_str().unwrap());
-        let mut gs_pf = PathBuf::from(std::env::temp_dir());
-        gs_pf.push(format!("gs.{}", wallpaper_ext));
-        let img = image::open(wallpaper).unwrap();
-        //convert to grayscale
-        let img = image::imageops::grayscale(&img);
-        img.save(gs_pf.to_str().unwrap()).unwrap();
-        wallpaper = gs_pf.clone();
+        wallpaper = to_grayscale(wallpaper);
     }
-        
     
     info!("setting wallpaper = {:?}", wallpaper);
 
     change_wallpaper(wallpaper.to_str().unwrap(), theme_options);
+
+    // TODO: trigger Action API
+    run_trigger(wallpaper, &theme_options, trigger_config);
 
 }

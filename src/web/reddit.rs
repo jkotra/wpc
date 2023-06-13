@@ -23,7 +23,8 @@ async fn get_pictures_from_subreddit(subreddit: &str, n: i64, cat: &str) -> Vec<
 
     let mut file_vec: Vec<String> = vec![];
 
-    let resp = reqwest::get(&url).await.unwrap().text().await.unwrap();
+    let client = reqwest::Client::builder().user_agent("wpc").build().unwrap();
+    let resp = client.get(&url).send().await.unwrap().text().await.unwrap();
 
     let data: Value = serde_json::from_str(&resp).unwrap();
 

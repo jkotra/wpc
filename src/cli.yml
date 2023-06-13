@@ -1,5 +1,5 @@
 name: WPC
-version: "1.7.0"
+version: "1.8.0"
 author: Jagadeesh K. <jagadeesh@stdin.top>
 about: Wallpaper changer for Windows/Linux
 args:
@@ -113,3 +113,8 @@ args:
     - theme-light:
         long: "theme-light"
         help: "Only set light theme compatible (set by --theme-threshold) wallpapers."
+
+    - trigger:
+        long: "trigger"
+        help: "Execute command on walpaper change"
+        default_value: "trigger.json"
