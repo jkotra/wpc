@@ -15,7 +15,7 @@ WPC is a wallpaper changer for Microsoft Windows and Linux.
   <summary> Usage (<b>-h</b>) </summary>
 
 ```
-WPC 1.7.0
+WPC 1.8.0
 Jagadeesh K. <jagadeesh@stdin.top>
 Wallpaper changer for Windows/Linux
 
@@ -45,6 +45,7 @@ OPTIONS:
         --reddit-n <reddit-n>                      no. of images to download from subreddit. [default: 1]
         --reddit-sort <reddit-sort>                Reddit sorting order. [ Hot, New, Top, Rising ] [default: hot]
         --theme-threshold <theme-threshold>        brightness threshold to determine theme [0 - 100] [default: 50]
+        --trigger <trigger>                        Execute command on walpaper change [default: trigger.json]
     -u, --update <update>                          Update interval in Seconds. [default: 3600]
 ```
 </details>
@@ -123,6 +124,38 @@ The above command(s) will change wallpaper(that are located at `-d`) every 60 se
 
 ---
 
+## Trigger Command on Wallpaper Change
+
+You can invoke a custom command on every wallpaper change with `--trigger` arg. chosen computed parameters (such as `Brightness`) and options (theme variants) will be passed to chosen command in the form of arguments.
+
+<details>
+  <summary> example <code>trigger.json</code> </summary>
+
+**NOTE**: *Only* use complete paths. 
+
+```json
+{
+	"enabled": true,
+	"bin": "/usr/bin/python",
+	"file": "/home/jkotra/playground.py",
+	"args": ["Brightness", "Grayscale", "ThemeDarkOnly", "ThemeLightOnly"]
+}
+```
+
+```py
+import sys
+
+print('Hello WPC')
+
+with open("args.txt", "a+") as f:
+    f.write(str(sys.argv))
+    f.close()
+```
+
+</details>
+
+---
+
 # Web Plugins
 
 | **Plugin** |                                                 **Example**                                                |
@@ -142,7 +175,7 @@ Complete [wallhaven API](https://wallhaven.cc/help/api) is implemented in [api/w
 
 ## Debug
 
-| **Plugin** |                                          **Environment Variable**                                          |
+| **Platform** |                                          **Command**                                          |
 |------------|:----------------------------------------------------------------------------------------------------------:|
-| Wallhaven  | `./wpc -d . -w`                                                                                            |
-| Reddit     | `./wpc -d . --reddit art --reddit-n 10 --reddit-sort top --reddit-min-width 1920 --reddit-min-height 1080` |
+| Linux  | `RUST_LOG=DEBUG ./wpc -d  .`                                                                                            |
+| Windows 10+ (PS)     | `$env:RUST_LOG = "DEBUG"` |
