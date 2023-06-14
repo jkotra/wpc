@@ -324,7 +324,6 @@ pub fn load_trigger_config(config_file: String) -> Option<TriggerConfig> {
     }
     let config_str = std::fs::read_to_string(config_file).unwrap();
     let t: TriggerConfig = serde_json::from_str(&config_str).unwrap();
-    println!("{:?}", t);
     Some(serde_json::from_str(&config_str).unwrap())
 }
 
@@ -434,17 +433,21 @@ mod misc_tests {
     }
 
     fn get_python_bin() -> std::io::Result<Output> {
-        return std::process::Command::new("which").arg("python").output()
+        #[cfg(target_os = "windows")]
+        return std::process::Command::new("where").arg("python").output();
 
-
-        
+        #[cfg(target_os = "linux")]
+        return std::process::Command::new("which").arg("python").output();
     }
 
     #[test]
     fn trigger_on_wallpaper_change() {
 
         let python_bin = match get_python_bin() {
+            #[cfg(target_os = "linux")]
             Ok(out) =>  String::from_utf8_lossy(&out.stdout).trim_end().to_string(),
+            #[cfg(target_os = "windows")]
+            Ok(out) =>  String::from_utf8_lossy(&out.stdout).split("\n").nth(0).unwrap().trim_end().to_string(),
             Err(why) =>  panic!("Unable to get python path: {:?}", why)
         };
 
