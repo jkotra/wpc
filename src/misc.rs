@@ -21,6 +21,8 @@ use std::sync::mpsc::channel;
 use std::sync::mpsc::{Sender};
 use std::time::Duration;
 
+use crate::settings::{TriggerConfig, TriggerArg, ThemeOptions};
+
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct SingleConfig {
@@ -46,17 +48,12 @@ pub fn notify_event(dir: std::sync::Arc<String>, main_thread_tx: Sender<bool>,) 
             Ok(event) => {
                 debug!("event received: {:?}", event);
             match event{
-                notify::DebouncedEvent::NoticeWrite(_) => (),
-                notify::DebouncedEvent::NoticeRemove(_) => (),
-                notify::DebouncedEvent::Rescan => (),
-                notify::DebouncedEvent::Error(_, _) => (),
-                notify::DebouncedEvent::Write(_) => (),
-                notify::DebouncedEvent::Chmod(_) => (),
                 | notify::DebouncedEvent::Create(_)
                 | notify::DebouncedEvent::Remove(_)
                 | notify::DebouncedEvent::Rename(_, _) => {
                     main_thread_tx.send(true).unwrap();
                 }
+                _ => ()
         }
     }
             Err(e) => println!("watch error: {:?}", e),
@@ -70,18 +67,10 @@ pub fn wait(sec: u64) {
 
 pub fn get_wpc_args() -> Vec<String> {
 
-    let mut args: Vec<String> = std::env::args().collect();
-    
-    for i in (0..args.len()).rev(){
-        if args[i] == "--startup"{ args.remove(i); }
-        else if args[i] == "-S" { args.remove(i); }
-        else if args[i] == "--background" { args.remove(i); }
-        else if args[i] == "-d" || args[i] == "--directory" {
-            if args[i+1] == "." {
-                args[i+1] = String::from(std::env::current_dir().unwrap().to_str().unwrap());
-            }
-        }
-    }
+    let prohibited = vec!["--startup", "-S", "--background"];
+
+    let args: Vec<String> = std::env::args().filter(|arg| !prohibited.contains(&arg.as_str()))
+    .collect();
 
     debug!("wpc args: {:?}", args);
     return args;
@@ -158,29 +147,13 @@ pub fn random_n(len_max: usize) -> usize {
 }
 
 pub fn update_file_list(dirpath: &str, maxage: i64) -> Vec<String> {
-
-    let files = std::fs::read_dir(dirpath).unwrap();
-    let mut wallpapers: Vec<String> = vec![];
-    let mut file_list = vec![];
-
-
-    for file in files {
-        let fp = file.unwrap().path().to_str().unwrap().to_string();
-        file_list.push(fp)
-    }
-
+    let mut file_list = std::fs::read_dir(dirpath).unwrap().map(|f| f.unwrap().path().to_string_lossy().to_string()).collect();
+    if maxage != -1 {
     file_list = maxage_filter(file_list, maxage);
-
-    for file in file_list{
-
-        if file.contains("_grayscale.") { continue }; //dont include grayscale images created by WPC
-        if file.ends_with("png"){ wallpapers.push(file) }
-        else if file.ends_with("jpg") { wallpapers.push(file) }
-        else if file.ends_with("jpeg") { wallpapers.push(file) }
-        else { continue }
     }
-
-    return wallpapers
+    file_list.into_iter()
+    .filter(|f| f.ends_with(".png") || f.ends_with(".jpg") || f.ends_with(".jpeg"))
+    .collect()
 }
 
 pub fn maxage_filter(file_list: Vec<String>, maxage: i64) -> Vec<String>{
@@ -332,15 +305,67 @@ pub fn secs_till_next_hour() -> u32 {
     return left as u32;
 }
 
+pub fn to_grayscale(wallpaper: PathBuf) -> PathBuf {
+    let mut gs_pf = PathBuf::from(std::env::temp_dir());
+    gs_pf.push(wallpaper.file_name().unwrap());
+
+    let img = image::open(wallpaper).unwrap();
+    
+    //convert to grayscale
+    let img = image::imageops::grayscale(&img);
+
+    img.save(gs_pf.clone()).unwrap();
+    gs_pf
+}
+
+pub fn load_trigger_config(config_file: String) -> Option<TriggerConfig> {
+    if !std::path::Path::new(&config_file).exists() {
+        return None;
+    }
+    let config_str = std::fs::read_to_string(config_file).unwrap();
+    let t: TriggerConfig = serde_json::from_str(&config_str).unwrap();
+    Some(serde_json::from_str(&config_str).unwrap())
+}
+
+fn map_trigger_arg_values(arg: &TriggerArg, wallpaper: &PathBuf, theme_options: &ThemeOptions) -> String {
+    match arg {
+        TriggerArg::Brightness => brighness_score(wallpaper.to_str().unwrap()).to_string(),
+        TriggerArg::Grayscale => theme_options.grayscale.to_string(),
+        TriggerArg::ThemeDarkOnly => theme_options.theme_dark_only.to_string(),
+        TriggerArg::ThemeLightOnly => theme_options.theme_light_only.to_string(),
+        _ => arg.to_string()
+    }
+}
+
+pub fn run_trigger(wallpaper: PathBuf, theme_options: &ThemeOptions, config: &TriggerConfig) {
+    if !config.enabled {
+        return;
+    }
+
+    let bin = std::path::Path::new(&config.bin);
+    let mut args: Vec<String> = config.args.iter()
+    .map(|arg| map_trigger_arg_values(arg, &wallpaper, theme_options))
+    .collect();
+    args.insert(0, config.file.clone());
+
+    let out = std::process::Command::new(bin)
+    .args(args)
+    .output().unwrap();
+    debug!("trigger stdout: {}", String::from_utf8_lossy(&out.stdout));
+}
+
+
 #[cfg(test)]
 mod misc_tests {
 
-    use std::{str::FromStr, path::PathBuf};
+    use std::{str::FromStr, path::PathBuf, process::Output};
 
     use chrono::Timelike;
     use image::{ImageBuffer, RgbImage};
 
-    use super::{get_dynamic_wp, update_file_list};
+    use crate::settings::{TriggerConfig, TriggerArg, ThemeOptions};
+
+    use super::{get_dynamic_wp, update_file_list, run_trigger};
 
 
     #[tokio::test]
@@ -402,10 +427,54 @@ mod misc_tests {
 
     #[test]
     fn local_mode() {
-
         gen_dummy_images();
         let files = update_file_list(std::fs::canonicalize("tests").unwrap().to_str().unwrap(), -1);
         assert_eq!(files.len(), 2);
+    }
+
+    fn get_python_bin() -> std::io::Result<Output> {
+        #[cfg(target_os = "windows")]
+        return std::process::Command::new("where").arg("python").output();
+
+        #[cfg(target_os = "linux")]
+        return std::process::Command::new("which").arg("python").output();
+    }
+
+    #[test]
+    fn trigger_on_wallpaper_change() {
+
+        let python_bin = match get_python_bin() {
+            #[cfg(target_os = "linux")]
+            Ok(out) =>  String::from_utf8_lossy(&out.stdout).trim_end().to_string(),
+            #[cfg(target_os = "windows")]
+            Ok(out) =>  String::from_utf8_lossy(&out.stdout).split("\n").nth(0).unwrap().trim_end().to_string(),
+            Err(why) =>  panic!("Unable to get python path: {:?}", why)
+        };
+
+        let mut python_test_trigger = String::from("import sys");
+        python_test_trigger += "\nwith open('tests//output.txt', 'w+') as f:\n";
+        python_test_trigger += "\tf.write(f'OK {sys.argv[1]}')";
+
+        match std::fs::write("tests/trigger.py", python_test_trigger) {
+            Ok(_) => (),
+            Err(why) => panic!("Unable to write test file: {:?}", why)
+        }
+        
+        gen_dummy_images();
+
+        let tc = TriggerConfig{ enabled: true, bin: python_bin, file: std::fs::canonicalize("tests/trigger.py").unwrap().to_string_lossy().to_string(), args: vec![TriggerArg::Brightness] };
+        let to = ThemeOptions{ ..Default::default() };
+        let wallpaper = std::path::PathBuf::from("tests/1.jpg");
+
+        run_trigger(wallpaper, &to, &tc);
+
+        match std::fs::read("tests/output.txt") {
+            Ok(fc) => {
+                let content = String::from_utf8_lossy(&fc).to_string();
+                assert_eq!(content, "OK 0");
+            },
+            Err(why) => panic!("Unable to read: {:?}", why)
+        }
 
     }
 

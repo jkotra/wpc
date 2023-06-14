@@ -6,5 +6,9 @@
         "**/.hg/store/**": true,
         ".flatpak/**": true,
         "_build/**": true
-    }
+    },
+    "[rust]": {
+        "editor.defaultFormatter": "rust-lang.rust-analyzer",
+        //"editor.formatOnSave": true
+    },
 }

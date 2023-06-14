@@ -21,6 +21,7 @@ enquote = "1.0.3"
 dirs = "2.0.2"
 image = "0.23.12"
 notify = "4.0.17"
+strum_macros = "0.24.3"
 tokio = { version = "1.8.4", features = ["full"] }
 
 [target.'cfg(windows)'.dependencies]
