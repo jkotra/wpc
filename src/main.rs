@@ -2,8 +2,6 @@
 extern crate clap;
 
 use clap::App;
-use image;
-use std::ffi::OsStr;
 use std::path::PathBuf;
 use std::sync::mpsc::channel;
 
@@ -18,15 +16,14 @@ mod changer;
 use changer::change_wallpaper;
 
 mod web;
-use web::wallhaven::WallHaven;
 use web::reddit::Reddit;
+use web::wallhaven::WallHaven;
 
 mod settings;
 use settings::{ThemeOptions, TriggerConfig};
 
 #[tokio::main]
 async fn main() {
-
     env_logger::init();
 
     let yaml = load_yaml!("cli.yml");
@@ -57,53 +54,64 @@ async fn main() {
 
     if app_settings.wallhaven {
         info!("loading wallhaven...");
-        let wallhaven_json_file = std::path::PathBuf::from(app_settings.directory.clone()).join("wallhaven.json");
-        debug!("wallhaven_json_file = {:?} | exists = {}", wallhaven_json_file, wallhaven_json_file.exists());
+        let wallhaven_json_file =
+            std::path::PathBuf::from(app_settings.directory.clone()).join("wallhaven.json");
+        debug!(
+            "wallhaven_json_file = {:?} | exists = {}",
+            wallhaven_json_file,
+            wallhaven_json_file.exists()
+        );
         wallhaven_cc.init(wallhaven_json_file);
     }
 
     /* setup reddit */
-    let mut reddit_com = Reddit{ ..Default::default() };
-    if app_settings.reddit{
+    let mut reddit_com = Reddit {
+        ..Default::default()
+    };
+    if app_settings.reddit {
         reddit_com.subreddit = app_settings.reddit_options.reddit;
         reddit_com.n = app_settings.reddit_options.reddit_n;
         reddit_com.min_height = app_settings.reddit_options.reddit_min_height;
         reddit_com.min_width = app_settings.reddit_options.reddit_min_width;
         reddit_com.cat = app_settings.reddit_options.reddit_sort;
     }
-    
 
     let mut time_since = std::time::Instant::now();
     let mut candidates: Vec<String> = vec![];
-    
+
     let watch_dir = std::sync::Arc::new(app_settings.directory.clone());
     let (tx, rx) = channel();
     std::thread::spawn(move || {
         let watch_dir = watch_dir.clone();
-        misc::notify_event(watch_dir, tx);   
+        misc::notify_event(watch_dir, tx);
     });
 
     let mut do_initial_update = true;
-    
+
     // main loop
     loop {
-        
         if app_settings.local {
-        match rx.try_recv() {
-            Ok(_) => { candidates = misc::update_file_list(&app_settings.directory, app_settings.maxage) },
-            Err(_) => ()
+            match rx.try_recv() {
+                Ok(_) => {
+                    candidates =
+                        misc::update_file_list(&app_settings.directory, app_settings.maxage)
+                }
+                Err(_) => (),
             }
-        debug!("[rx update] candidates = {}", candidates.len());
+            debug!("[rx update] candidates = {}", candidates.len());
         }
 
         if candidates.len() > 0 {
-        change_wallpaper_random(&candidates, app_settings.theme_options, &app_settings.trigger_config);
-        info!("sleeping for {} secs...", app_settings.interval);
-        wait(app_settings.interval);
+            change_wallpaper_random(
+                &candidates,
+                app_settings.theme_options,
+                &app_settings.trigger_config,
+            );
+            info!("sleeping for {} secs...", app_settings.interval);
+            wait(app_settings.interval);
         };
 
         if (time_since.elapsed().as_secs() >= app_settings.update) || do_initial_update {
-
             debug!("updating....");
 
             if app_settings.dynamic {
@@ -112,12 +120,12 @@ async fn main() {
                         match x.darkmode {
                             Some(val) => {
                                 app_settings.theme_options.force_dark_theme = val;
-                            },
-                            None => ()
+                            }
+                            None => (),
                         }
                         vec![x.path]
-                    },
-                    None => vec![]
+                    }
+                    None => vec![],
                 };
                 app_settings.update = secs_till_next_hour() as u64;
                 app_settings.interval = app_settings.update;
@@ -129,12 +137,16 @@ async fn main() {
             }
 
             if app_settings.wallhaven {
-                let mut files = wallhaven_cc.update(&app_settings.directory, app_settings.maxage).await;
+                let mut files = wallhaven_cc
+                    .update(&app_settings.directory, app_settings.maxage)
+                    .await;
                 candidates.append(&mut files);
             }
 
             if app_settings.reddit {
-                let mut files = reddit_com.update(&app_settings.directory, app_settings.maxage).await;
+                let mut files = reddit_com
+                    .update(&app_settings.directory, app_settings.maxage)
+                    .await;
                 candidates.append(&mut files);
             }
 
@@ -143,31 +155,35 @@ async fn main() {
             do_initial_update = false;
 
             if candidates.len() == 0 {
-                warn!("no updates available. sleeping for {} seconds.", app_settings.update);
+                warn!(
+                    "no updates available. sleeping for {} seconds.",
+                    app_settings.update
+                );
                 wait(app_settings.update);
             }
-
         }
     }
 }
 
-fn change_wallpaper_random(file_list: &Vec<String>, theme_options: ThemeOptions, trigger_config: &TriggerConfig) {
-
+fn change_wallpaper_random(
+    file_list: &Vec<String>,
+    theme_options: ThemeOptions,
+    trigger_config: &TriggerConfig,
+) {
     let rand_n = random_n(file_list.len());
     let wp = file_list.get(rand_n).unwrap();
 
     let mut wallpaper = PathBuf::from(wp);
 
-    if theme_options.grayscale{
+    if theme_options.grayscale {
         info!("applying grayscale to {}", wallpaper.to_str().unwrap());
         wallpaper = to_grayscale(wallpaper);
     }
-    
+
     info!("setting wallpaper = {:?}", wallpaper);
 
     change_wallpaper(wallpaper.to_str().unwrap(), theme_options);
 
     // TODO: trigger Action API
     run_trigger(wallpaper, &theme_options, trigger_config);
-
 }

@@ -1,9 +1,9 @@
-use gio::traits::SettingsExt;
-use gio::{Settings};
-use log::debug;
-use log::{info};
-use std::path::PathBuf;
 use crate::misc;
+use gio::traits::SettingsExt;
+use gio::Settings;
+use log::debug;
+use log::info;
+use std::path::PathBuf;
 
 pub fn change_wallpaper_gnome(file: &str, theme: Option<String>) {
     let pb = PathBuf::from(file);
@@ -22,14 +22,13 @@ pub fn change_wallpaper_gnome(file: &str, theme: Option<String>) {
 
     match bg_settings.set_string("picture-uri", wp.as_str()) {
         Ok(()) => (),
-        Err(why) => debug!("{:?}", why)
+        Err(why) => debug!("{:?}", why),
     }
 
     match bg_settings.set_string("picture-uri-dark", wp.as_str()) {
         Ok(()) => (),
-        Err(why) => debug!("picture-uri-dark error: {:?}", why)
+        Err(why) => debug!("picture-uri-dark error: {:?}", why),
     }
-
 }
 
 pub fn add_to_startup_gnome() -> Result<bool, Box<dyn std::error::Error>> {
@@ -45,7 +44,8 @@ pub fn add_to_startup_gnome() -> Result<bool, Box<dyn std::error::Error>> {
 
     info!("{:?}/wpc.service", sysd_path.as_os_str());
 
-    let startup = format!(" \
+    let startup = format!(
+        " \
      [Unit] \
     \nDescription=Wallpaper Changer \
     \nRequires=graphical-session.target \
@@ -56,17 +56,19 @@ pub fn add_to_startup_gnome() -> Result<bool, Box<dyn std::error::Error>> {
     \nRestartSec=30 \
     \n\n [Install] \
     \nWantedBy=default.target
-    ", exe=curr_exe, args=args);
+    ",
+        exe = curr_exe,
+        args = args
+    );
 
     info!("unit file: {}", startup);
 
-    if sysd_path.exists(){
-        match std::fs::remove_file(sysd_path.to_str().unwrap().to_string() + "wpc.service"){
+    if sysd_path.exists() {
+        match std::fs::remove_file(sysd_path.to_str().unwrap().to_string() + "wpc.service") {
             Ok(_) => info!("removed old wpc.service."),
-            Err(e) => info!("{:#?}", e)
+            Err(e) => info!("{:#?}", e),
         }
-    }
-    else{
+    } else {
         std::fs::create_dir_all(sysd_path.as_path()).expect("cannot create recursive dirs.");
     }
 
@@ -89,13 +91,13 @@ pub fn add_to_startup_gnome() -> Result<bool, Box<dyn std::error::Error>> {
     */
 
     let resp = std::process::Command::new("systemctl")
-    .args(vec!["--user", "enable", "wpc"])
-    .output()
-    .expect("cannot enable unit.");
+        .args(vec!["--user", "enable", "wpc"])
+        .output()
+        .expect("cannot enable unit.");
 
     info!("{:#?}", resp);
 
-    if resp.status.code().unwrap() == 0{
+    if resp.status.code().unwrap() == 0 {
         info!("wpc.service enabled!");
         info!("wpc added to startup!");
     }
