@@ -94,7 +94,7 @@ mod reddit {
 
     #[tokio::test]
     async fn reddit_test_get_image_urls_from_subreddit() {
-        let urls = super::get_pictures_from_subreddit("wallpaper", 5, "hot").await;
+        let urls = super::get_pictures_from_subreddit("art", 5, "hot").await;
         assert_eq!(urls.len(), 5);
     }
 }
