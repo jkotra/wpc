@@ -44,3 +44,8 @@ pub fn add_to_startup() {
     #[cfg(target_os = "linux")]
     gnome::add_to_startup_gnome().expect("Error while adding to startup.");
 }
+
+pub fn rm_from_startup() {
+    #[cfg(target_os = "linux")]
+    gnome::rm_startup();
+}

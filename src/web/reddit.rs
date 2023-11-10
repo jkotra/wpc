@@ -1,4 +1,5 @@
 use crate::misc;
+use clap::ValueEnum;
 use image;
 use image::GenericImageView;
 use log::debug;
@@ -6,14 +7,14 @@ use reqwest;
 use serde_json;
 use serde_json::Value;
 
-async fn get_pictures_from_subreddit(subreddit: &str, n: i64, cat: &str) -> Vec<String> {
+async fn get_pictures_from_subreddit(subreddit: &str, n: i64, cat: RedditSort) -> Vec<String> {
     let mut url = String::from("https://reddit.com/r/") + subreddit;
 
     match cat {
-        "hot" => url += "/hot/",
-        "new" => url += "/new/",
-        "top" => url += "/top/",
-        "rising" => url += "/rising/",
+        RedditSort::Hot => url += "/hot/",
+        RedditSort::New => url += "/new/",
+        RedditSort::Top => url += "/top/",
+        RedditSort::Rising => url += "/rising/",
         _ => url += "/hot/", //default
     }
 
@@ -50,10 +51,20 @@ async fn get_pictures_from_subreddit(subreddit: &str, n: i64, cat: &str) -> Vec<
     return file_vec;
 }
 
+#[derive(Debug, Default, Clone, Copy, ValueEnum)]
+pub enum RedditSort {
+    #[default]
+    Hot,
+    Popular,
+    New,
+    Top,
+    Rising,
+}
+
 #[derive(Default, Debug)]
 pub struct Reddit {
     pub subreddit: String,
-    pub cat: String,
+    pub cat: RedditSort,
     pub n: i64,
 
     pub min_height: u32,
@@ -62,7 +73,7 @@ pub struct Reddit {
 
 impl Reddit {
     pub async fn update(&self, savepath: &str, maxage: i64) -> Vec<String> {
-        let urls = get_pictures_from_subreddit(&self.subreddit, self.n, &self.cat).await;
+        let urls = get_pictures_from_subreddit(&self.subreddit, self.n, self.cat).await;
         debug!("URLs from reddit = {:?}", urls);
         let files = misc::download_wallpapers(urls, savepath).await;
         let files = misc::maxage_filter(files, maxage);
@@ -92,9 +103,11 @@ impl Reddit {
 #[cfg(test)]
 mod reddit {
 
+    use crate::web::reddit::RedditSort;
+
     #[tokio::test]
     async fn reddit_test_get_image_urls_from_subreddit() {
-        let urls = super::get_pictures_from_subreddit("art", 5, "hot").await;
+        let urls = super::get_pictures_from_subreddit("art", 5, RedditSort::Hot).await;
         assert_eq!(urls.len(), 5);
     }
 }

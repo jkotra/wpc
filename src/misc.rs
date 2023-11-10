@@ -299,7 +299,7 @@ pub fn get_dynamic_wp(config_file: &str) -> Option<SingleConfig> {
     return wp;
 }
 
-pub fn secs_till_next_hour() -> u32 {
+pub fn secs_till_next_hour() -> u64 {
     let t = chrono::offset::Local::now();
     let min = 60 - t.minute();
 
@@ -308,7 +308,7 @@ pub fn secs_till_next_hour() -> u32 {
 
     debug!("secs left untl next hour = {}", left);
 
-    return left as u32;
+    return left as u64;
 }
 
 pub fn to_grayscale(wallpaper: PathBuf) -> PathBuf {

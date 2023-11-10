@@ -31,18 +31,25 @@ pub fn change_wallpaper_gnome(file: &str, theme: Option<String>) {
     }
 }
 
-pub fn add_to_startup_gnome() -> Result<bool, Box<dyn std::error::Error>> {
-    let mut args: Vec<String> = misc::get_wpc_args();
-    args.remove(0);
-
-    let curr_exe = std::env::current_exe().unwrap();
-    let curr_exe = curr_exe.to_str().unwrap();
-    let args = args.join(" ");
-
+fn get_systemd_unit_path() -> std::path::PathBuf {
     let mut sysd_path = dirs::home_dir().unwrap();
     sysd_path.push(".config/systemd/user/");
+    sysd_path
+}
 
-    info!("{:?}/wpc.service", sysd_path.as_os_str());
+pub fn add_to_startup_gnome() -> Result<bool, String> {
+    let mut sysd_path = get_systemd_unit_path();
+
+    let curr_exe = std::env::current_exe().unwrap();
+
+    let mut args: Vec<String> = misc::get_wpc_args();
+    args.remove(0);
+    let args = args.join(" ");
+
+    info!(
+        "target unit file path: {:?}/wpc.service",
+        sysd_path.as_os_str()
+    );
 
     let startup = format!(
         " \
@@ -57,7 +64,7 @@ pub fn add_to_startup_gnome() -> Result<bool, Box<dyn std::error::Error>> {
     \n\n [Install] \
     \nWantedBy=default.target
     ",
-        exe = curr_exe,
+        exe = curr_exe.to_str().unwrap(),
         args = args
     );
 
@@ -78,29 +85,34 @@ pub fn add_to_startup_gnome() -> Result<bool, Box<dyn std::error::Error>> {
     std::fs::write(sysd_path.as_path(), startup).expect("cannot write to unit file.");
     info!("wpc.service created!");
 
-    /*
-    let resp = std::process::Command::new("systemctl")
-    .args(vec!["--user", "daemon-reload"])
-    .output()
-    .expect("cannot reload systemd daemon.");
-    info!("{:#?}", resp);
-
-    if resp.status.code().unwrap() == 0{
-        info!("systemd daemon reloaded!");
-    }
-    */
-
     let resp = std::process::Command::new("systemctl")
         .args(vec!["--user", "enable", "wpc"])
         .output()
         .expect("cannot enable unit.");
 
-    info!("{:#?}", resp);
-
-    if resp.status.code().unwrap() == 0 {
-        info!("wpc.service enabled!");
-        info!("wpc added to startup!");
+    match resp.status.code() {
+        Some(code) => {
+            if code == 0 {
+                return Ok(true);
+            }
+        }
+        None => return Err(String::from_utf8_lossy(&resp.stdout).to_string()),
     }
 
     return Ok(true);
+}
+
+pub fn rm_startup() -> bool {
+    let sysd_path = get_systemd_unit_path();
+    if sysd_path.exists() {
+        let resp = std::process::Command::new("systemctl")
+            .args(vec!["--user", "disable", "wpc"])
+            .output()
+            .expect("cannot disable unit.");
+        match resp.status.code() {
+            Some(code) => return code == 0,
+            None => return false,
+        }
+    }
+    false
 }
