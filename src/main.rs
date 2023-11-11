@@ -33,7 +33,9 @@ async fn main() {
     if app_settings.startup {
         changer::add_to_startup();
     } else {
-        changer::rm_from_startup();
+        if app_settings.rm_startup {
+            changer::rm_from_startup();
+        }
     }
 
     if app_settings.background {

@@ -48,4 +48,7 @@ pub fn add_to_startup() {
 pub fn rm_from_startup() {
     #[cfg(target_os = "linux")]
     gnome::rm_startup();
+
+    #[cfg(target_os = "windows")]
+    windows::rm_startup_reg();
 }
