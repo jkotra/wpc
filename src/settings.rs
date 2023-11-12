@@ -78,7 +78,7 @@ pub struct TriggerConfig {
 #[command(author, version, long_about)]
 pub struct WPCSettings {
     #[arg(long, short = 'd', help = "save / source directory.")]
-    pub directory: String,
+    pub directory: PathBuf,
 
     #[arg(
         short = 'c',
@@ -128,7 +128,7 @@ pub struct WPCSettings {
     #[command(flatten)]
     pub theme_options: ThemeOptions,
     #[arg(long = "trigger", required = false)]
-    pub trigger_config_file: Option<String>,
+    pub trigger_config_file: Option<PathBuf>,
     #[arg(skip)]
     pub trigger_config: TriggerConfig,
 
@@ -163,10 +163,8 @@ pub fn parse() -> WPCSettings {
     if !cli.wallhaven && !cli.reddit {
         cli.local = true;
     }
-    if cli.directory == "." {
-        cli.directory = String::from(std::env::current_dir().unwrap().to_str().unwrap());
-        info!("expanded . to {}", cli.directory);
-    }
+
+    cli.directory = cli.directory.canonicalize().unwrap();
 
     if (cli.theme_options.theme_th > 100.0) || (cli.theme_options.theme_th < 0.0) {
         cli.theme_options.theme_th = 50.0
@@ -174,15 +172,18 @@ pub fn parse() -> WPCSettings {
     match cli.dynamic_config_file {
         Some(_) => {
             cli.dynamic = true;
+            cli.dynamic_config_file =
+                Some(cli.dynamic_config_file.unwrap().canonicalize().unwrap());
             cli.update = secs_till_next_hour();
             cli.interval = cli.update;
         }
         None => cli.dynamic = false,
     }
 
-    match cli.trigger_config_file.as_ref() {
+    match cli.trigger_config_file {
         Some(f) => {
-            cli.trigger_config = load_trigger_config(f.to_string()).unwrap_or(TriggerConfig {
+            cli.trigger_config_file = Some(f.clone().canonicalize().unwrap());
+            cli.trigger_config = load_trigger_config(f.clone()).unwrap_or(TriggerConfig {
                 ..Default::default()
             })
         }

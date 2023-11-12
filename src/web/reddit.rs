@@ -1,3 +1,5 @@
+use std::path::PathBuf;
+
 use crate::misc;
 use clap::ValueEnum;
 use image;
@@ -72,7 +74,7 @@ pub struct Reddit {
 }
 
 impl Reddit {
-    pub async fn update(&self, savepath: &str, maxage: i64) -> Vec<String> {
+    pub async fn update(&self, savepath: &PathBuf, maxage: i64) -> Vec<String> {
         let urls = get_pictures_from_subreddit(&self.subreddit, self.n, self.cat).await;
         debug!("URLs from reddit = {:?}", urls);
         let files = misc::download_wallpapers(urls, savepath).await;

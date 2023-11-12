@@ -19,7 +19,7 @@ pub struct WallHaven {
 }
 
 impl WallHaven {
-    pub async fn update(&self, savepath: &str, maxage: i64) -> Vec<String> {
+    pub async fn update(&self, savepath: &PathBuf, maxage: i64) -> Vec<String> {
         let wallpaper_links = self.get_collection().await;
         debug!("wallhaven collection links = {:?}", wallpaper_links);
         let mut files = misc::download_wallpapers(wallpaper_links, &savepath).await;
