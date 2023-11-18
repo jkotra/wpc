@@ -353,7 +353,6 @@ fn map_trigger_arg_values(
         TriggerArg::Grayscale => theme_options.grayscale.to_string(),
         TriggerArg::ThemeDarkOnly => theme_options.theme_dark_only.to_string(),
         TriggerArg::ThemeLightOnly => theme_options.theme_light_only.to_string(),
-        _ => arg.to_string(),
     }
 }
 

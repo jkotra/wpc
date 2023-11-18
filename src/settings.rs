@@ -162,6 +162,8 @@ pub fn parse() -> WPCSettings {
     let mut cli = WPCSettings::parse();
     if !cli.wallhaven && !cli.reddit {
         cli.local = true;
+    } else {
+        cli.local = false;
     }
 
     cli.directory = cli.directory.canonicalize().unwrap();
