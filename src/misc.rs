@@ -69,13 +69,23 @@ pub fn wait(sec: u64) {
 
 pub fn get_wpc_args() -> Vec<String> {
     let prohibited = vec!["--startup", "-S", "--background"];
+    let canonicalize_args = vec!["-d", "--directory", "--trigger", "--dynamic"];
 
-    let args: Vec<String> = std::env::args()
+    let mut args: Vec<String> = std::env::args()
         .filter(|arg| !prohibited.contains(&arg.as_str()))
         .collect();
+    for i in 0..args.len() {
+        if canonicalize_args.contains(&args[i].as_str()) {
+            args[i + 1] = std::fs::canonicalize(PathBuf::from(&args[i + 1]))
+                .unwrap()
+                .to_str()
+                .unwrap()
+                .to_string();
+        }
+    }
 
     debug!("wpc args: {:?}", args);
-    return args;
+    args
 }
 
 pub fn run_in_background() {
