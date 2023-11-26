@@ -67,6 +67,22 @@ pub fn add_to_startup_reg() {
     println!("WPC added to startup!");
 }
 
+pub fn rm_startup_reg() {
+    println!("Removing WPC from startup...");
+
+    let subkey = winreg::RegKey::predef(HKEY_CURRENT_USER)
+        .open_subkey_with_flags(
+            r#"Software\Microsoft\Windows\CurrentVersion\Run"#,
+            KEY_ALL_ACCESS,
+        )
+        .expect("Failed to open subkey");
+
+    match subkey.delete_value("WPC") {
+        Ok(_) => info!("WPC removed from startup."),
+        Err(err) => info!("#{:?}", err),
+    }
+}
+
 pub fn use_light_theme_reg(value: u32) {
     let hkcu = winreg::RegKey::predef(HKEY_CURRENT_USER);
     let subkey = hkcu

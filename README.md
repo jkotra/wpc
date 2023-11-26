@@ -15,38 +15,59 @@ WPC is a wallpaper changer for Microsoft Windows and Linux.
   <summary> Usage (<b>-h</b>) </summary>
 
 ```
-WPC 1.8.0
-Jagadeesh K. <jagadeesh@stdin.top>
-Wallpaper changer for Windows/Linux
+Usage: wpc [OPTIONS] --directory <DIRECTORY>
 
-USAGE:
-    wpc [FLAGS] [OPTIONS] --directory <directory>
-
-FLAGS:
-        --background     Run WPC in background.
-        --grayscale      convert image to grayscale.
-    -h, --help           Prints help information
-    -l, --local          Include only local files.
-        --set-theme      set light / dark theme based on the brightness of the wallpaper.
-    -S, --startup        start WPC at startup.
-        --theme-dark     Only set dark theme compatible (set by theme-threshold) wallpapers.
-        --theme-light    Only set light theme compatible (set by --theme-threshold) wallpapers.
-    -V, --version        Prints version information
-    -w, --wallhaven      wallhaven.cc plugin.
-
-OPTIONS:
-    -d, --directory <directory>                    directory of wallpapers.
-        --dynamic <dynamic>                        Dynamically set wallpaper based on time. [default: config.json]
-    -i, --interval <interval>                      interval in Seconds. [default: 300]
-        --maxage <maxage>                          maximum age of wallpaper in Hours(h). [default: -1]
-    -r, --reddit <reddit>                          Reddit subreddit (/r/something) [default: wallpaper]
-        --reddit-min-height <reddit-min-height>    Image.height >= reddit-min-height [default: 1080]
-        --reddit-min-width <reddit-min-width>      Image.width >= reddit-min-width [default: 1920]
-        --reddit-n <reddit-n>                      no. of images to download from subreddit. [default: 1]
-        --reddit-sort <reddit-sort>                Reddit sorting order. [ Hot, New, Top, Rising ] [default: hot]
-        --theme-threshold <theme-threshold>        brightness threshold to determine theme [0 - 100] [default: 50]
-        --trigger <trigger>                        Execute command on walpaper change [default: trigger.json]
-    -u, --update <update>                          Update interval in Seconds. [default: 3600]
+Options:
+  -d, --directory <DIRECTORY>
+          save / source directory.
+  -c, --change-interval <c_seconds>
+          interval between wallpaper change. [default: 300] [aliases: interval] [short aliases: i]
+  -f, --fetch-interval <f_seconds>
+          interval between each refresh from configures sources. [default: 3600] [aliases: update] [short aliases: u]
+      --maxage <MAXAGE>
+          maximum age of wallpaper. [default: -1]
+  -s, --startup
+          add WPC to startup. [short aliases: S]
+      --rm-startup
+          remove WPC from startup.
+  -b, --background
+          run WPC as background process.
+      --set-theme
+          
+      --grayscale
+          
+      --force-dark-theme
+          
+      --theme-th <theme-brigness-threshold>
+          [default: 50]
+      --theme-dark-only
+          
+      --theme-light-only
+          
+      --trigger <TRIGGER_CONFIG_FILE>
+          
+  -w
+          wallhaven.cc plugin.
+  -r, --reddit
+          reddit plugin.
+      --subreddit <subreddit>
+          [default: wallpaper]
+      --reddit-n <reddit-n>
+          [default: 6]
+      --reddit-sort <reddit-sort>
+          [default: hot] [possible values: hot, popular, new, top, rising]
+      --reddit-min-height <reddit-min-height>
+          [default: 1920]
+      --reddit-min-width <reddit-min-width>
+          [default: 1080]
+  -l, --local
+          Include only local files.
+      --dynamic <DYNAMIC_CONFIG_FILE>
+          Dynamically set wallpaper based on time.
+  -h, --help
+          Print help
+  -V, --version
+          Print version
 ```
 </details>
 
@@ -70,8 +91,8 @@ Binary will be located at `target/release/`
 
 | **Platform** |              **Command**              |
 |--------------|:-------------------------------------:|
-| Linux        | `./wpc -d . -i 60 -u 360 --startup`   |
-| Windows      | `wpc.exe -d . -i 60 -u 360 --startup` |
+| Linux        | `./wpc -d . -c 60 -f 360 --startup`   |
+| Windows      | `wpc.exe -d . -c 60 -f 360 --startup` |
 
 
 The above command(s) will change wallpaper(that are located at `-d`) every 60 seconds, check for new images every 360 seconds, and add **WPC** to startup with the same settings.
@@ -161,7 +182,7 @@ with open("args.txt", "a+") as f:
 | **Plugin** |                                                 **Example**                                                |
 |------------|:----------------------------------------------------------------------------------------------------------:|
 | Wallhaven  | `./wpc -d . -w`                                                                                            |
-| Reddit     | `./wpc -d . --reddit art --reddit-n 10 --reddit-sort top --reddit-min-width 1920 --reddit-min-height 1080` |
+| Reddit     | `./wpc -d . --reddit --subreddit art --reddit-n 10 --reddit-sort top --reddit-min-width 1920 --reddit-min-height 1080` |
 
 ---
 

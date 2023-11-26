@@ -1,7 +1,3 @@
-#[macro_use]
-extern crate clap;
-
-use clap::App;
 use std::path::PathBuf;
 use std::sync::mpsc::channel;
 
@@ -26,11 +22,7 @@ use settings::{ThemeOptions, TriggerConfig};
 async fn main() {
     env_logger::init();
 
-    let yaml = load_yaml!("cli.yml");
-    let matches = App::from_yaml(yaml).get_matches();
-    let mut app_settings = settings::parse(matches);
-
-    info!("{:?}", app_settings);
+    let mut app_settings = settings::parse();
 
     if cfg!(linux) {
         if !misc::is_linux_gnome_de() {
@@ -40,6 +32,10 @@ async fn main() {
 
     if app_settings.startup {
         changer::add_to_startup();
+    } else {
+        if app_settings.rm_startup {
+            changer::rm_from_startup();
+        }
     }
 
     if app_settings.background {
@@ -115,7 +111,14 @@ async fn main() {
             debug!("updating....");
 
             if app_settings.dynamic {
-                candidates = match get_dynamic_wp(&app_settings.dynamic_config_file) {
+                candidates = match get_dynamic_wp(
+                    app_settings
+                        .dynamic_config_file
+                        .as_deref()
+                        .unwrap()
+                        .to_str()
+                        .unwrap(),
+                ) {
                     Some(x) => {
                         match x.darkmode {
                             Some(val) => {
@@ -184,6 +187,5 @@ fn change_wallpaper_random(
 
     change_wallpaper(wallpaper.to_str().unwrap(), theme_options);
 
-    // TODO: trigger Action API
     run_trigger(wallpaper, &theme_options, trigger_config);
 }

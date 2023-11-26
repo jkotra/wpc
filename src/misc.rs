@@ -1,5 +1,6 @@
 use std::fs::File;
 use std::io;
+use std::path::Path;
 use std::path::PathBuf;
 use std::str::FromStr;
 extern crate rand;
@@ -35,12 +36,14 @@ pub struct DynamicConfig {
     pub configs: Vec<SingleConfig>,
 }
 
-pub fn notify_event(dir: std::sync::Arc<String>, main_thread_tx: Sender<bool>) -> () {
-    let dir = dir.as_str();
+pub fn notify_event(dir: std::sync::Arc<PathBuf>, main_thread_tx: Sender<bool>) -> () {
+    //let dir = dir.as_str();
 
     let (tx, rx) = channel();
     let mut watcher: RecommendedWatcher = Watcher::new(tx, Duration::from_secs(2)).unwrap();
-    watcher.watch(dir, RecursiveMode::NonRecursive).unwrap();
+    watcher
+        .watch(dir.as_ref(), RecursiveMode::NonRecursive)
+        .unwrap();
 
     loop {
         match rx.recv() {
@@ -66,13 +69,23 @@ pub fn wait(sec: u64) {
 
 pub fn get_wpc_args() -> Vec<String> {
     let prohibited = vec!["--startup", "-S", "--background"];
+    let canonicalize_args = vec!["-d", "--directory", "--trigger", "--dynamic"];
 
-    let args: Vec<String> = std::env::args()
+    let mut args: Vec<String> = std::env::args()
         .filter(|arg| !prohibited.contains(&arg.as_str()))
         .collect();
+    for i in 0..args.len() {
+        if canonicalize_args.contains(&args[i].as_str()) {
+            args[i + 1] = std::fs::canonicalize(PathBuf::from(&args[i + 1]))
+                .unwrap()
+                .to_str()
+                .unwrap()
+                .to_string();
+        }
+    }
 
     debug!("wpc args: {:?}", args);
-    return args;
+    args
 }
 
 pub fn run_in_background() {
@@ -93,7 +106,7 @@ pub fn run_in_background() {
         .expect("Child process failed to start.");
 }
 
-pub async fn download_wallpapers(urls: Vec<String>, savepath: &str) -> Vec<String> {
+pub async fn download_wallpapers(urls: Vec<String>, savepath: &PathBuf) -> Vec<String> {
     let mut remote_files: Vec<String> = vec![];
 
     for url in urls {
@@ -101,9 +114,7 @@ pub async fn download_wallpapers(urls: Vec<String>, savepath: &str) -> Vec<Strin
 
         file_vec = url.split("/").collect();
 
-        let mut filename = PathBuf::from(savepath);
-        filename = filename.join(file_vec[file_vec.len() - 1]);
-
+        let filename = savepath.join(file_vec[file_vec.len() - 1]);
         remote_files.push(String::from(filename.to_str().unwrap()));
 
         match async_download(url.as_str(), filename.to_str().unwrap()).await {
@@ -145,7 +156,7 @@ pub fn random_n(len_max: usize) -> usize {
     rng.gen_range(0, len_max)
 }
 
-pub fn update_file_list(dirpath: &str, maxage: i64) -> Vec<String> {
+pub fn update_file_list(dirpath: &PathBuf, maxage: i64) -> Vec<String> {
     let mut file_list = std::fs::read_dir(dirpath)
         .unwrap()
         .map(|f| f.unwrap().path().to_string_lossy().to_string())
@@ -230,7 +241,7 @@ pub fn get_dynamic_wp(config_file: &str) -> Option<SingleConfig> {
 
     if !config.exists() {
         // can files and create json
-        let mut files = update_file_list(config.parent().unwrap().to_str().unwrap(), -1);
+        let mut files = update_file_list(&config.parent().unwrap().to_path_buf(), -1);
         files.sort();
         let mut interval = 23 / files.len();
         let mut hour = 0;
@@ -299,7 +310,7 @@ pub fn get_dynamic_wp(config_file: &str) -> Option<SingleConfig> {
     return wp;
 }
 
-pub fn secs_till_next_hour() -> u32 {
+pub fn secs_till_next_hour() -> u64 {
     let t = chrono::offset::Local::now();
     let min = 60 - t.minute();
 
@@ -308,7 +319,7 @@ pub fn secs_till_next_hour() -> u32 {
 
     debug!("secs left untl next hour = {}", left);
 
-    return left as u32;
+    return left as u64;
 }
 
 pub fn to_grayscale(wallpaper: PathBuf) -> PathBuf {
@@ -324,11 +335,11 @@ pub fn to_grayscale(wallpaper: PathBuf) -> PathBuf {
     gs_pf
 }
 
-pub fn load_trigger_config(config_file: String) -> Option<TriggerConfig> {
-    if !std::path::Path::new(&config_file).exists() {
-        return None;
-    }
-    let config_str = std::fs::read_to_string(config_file).unwrap();
+pub fn load_trigger_config<P>(config_file: P) -> Option<TriggerConfig>
+where
+    P: AsRef<Path>,
+{
+    let config_str = std::fs::read_to_string(config_file.as_ref()).unwrap();
     Some(serde_json::from_str(&config_str).unwrap())
 }
 
@@ -342,7 +353,6 @@ fn map_trigger_arg_values(
         TriggerArg::Grayscale => theme_options.grayscale.to_string(),
         TriggerArg::ThemeDarkOnly => theme_options.theme_dark_only.to_string(),
         TriggerArg::ThemeLightOnly => theme_options.theme_light_only.to_string(),
-        _ => arg.to_string(),
     }
 }
 
@@ -382,7 +392,8 @@ mod misc_tests {
             String::from("https://upload.wikimedia.org/wikipedia/commons/thumb/8/80/Wikipedia-logo-v2.svg/1024px-Wikipedia-logo-v2.svg.png")
     );
 
-        let files = super::download_wallpapers(url, "./target/debug").await;
+        let files =
+            super::download_wallpapers(url, &std::path::PathBuf::from("./target/debug")).await;
         assert_eq!(files.len(), 1 as usize);
 
         let test_file_path = std::path::PathBuf::from(&files[0]);
@@ -432,10 +443,7 @@ mod misc_tests {
     #[test]
     fn local_mode() {
         gen_dummy_images();
-        let files = update_file_list(
-            std::fs::canonicalize("tests").unwrap().to_str().unwrap(),
-            -1,
-        );
+        let files = update_file_list(&std::fs::canonicalize("tests").unwrap(), -1);
         assert_eq!(files.len(), 2);
     }
 

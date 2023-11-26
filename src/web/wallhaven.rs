@@ -19,7 +19,7 @@ pub struct WallHaven {
 }
 
 impl WallHaven {
-    pub async fn update(&self, savepath: &str, maxage: i64) -> Vec<String> {
+    pub async fn update(&self, savepath: &PathBuf, maxage: i64) -> Vec<String> {
         let wallpaper_links = self.get_collection().await;
         debug!("wallhaven collection links = {:?}", wallpaper_links);
         let mut files = misc::download_wallpapers(wallpaper_links, &savepath).await;
@@ -40,9 +40,9 @@ impl WallHaven {
 
         let mut coll_urls: Vec<String> = vec![];
 
-        for x in collection["data"].as_array() {
-            for y in x {
-                coll_urls.push(y["path"].as_str().unwrap().to_string())
+        if let Some(arr) = collection["data"].as_array() {
+            for link in arr {
+                coll_urls.push(link["path"].as_str().unwrap().to_string())
             }
         }
 
@@ -64,18 +64,9 @@ impl WallHaven {
             println!("🔑 API key\n(not required for public collection, just press ENTER)\n(Get API key from https://wallhaven.cc/settings/account):");
             std::io::stdin().read_line(&mut wh_api_key).unwrap();
 
-            self.username = wh_username
-                .trim_end_matches("\n")
-                .trim_end_matches("\r")
-                .to_string();
-            self.coll_id = wh_coll_id
-                .trim_end_matches("\n")
-                .trim_end_matches("\r")
-                .to_string();
-            self.api_key = wh_api_key
-                .trim_end_matches("\n")
-                .trim_end_matches("\r")
-                .to_string();
+            self.username = wh_username.trim().to_string();
+            self.coll_id = wh_coll_id.trim().to_string();
+            self.api_key = wh_api_key.trim().to_string();
 
             let mut writer = std::io::BufWriter::new(std::fs::File::create(savepath).unwrap());
             match serde_json::to_writer_pretty(&mut writer, self) {
