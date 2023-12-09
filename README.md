@@ -46,8 +46,10 @@ Options:
           
       --trigger <TRIGGER_CONFIG_FILE>
           
-  -w
+  -w, --wallhaven
           wallhaven.cc plugin.
+      --wallhaven-config <WALLHAVEN_CONFIG_FILE>
+          wallhaven config file
   -r, --reddit
           reddit plugin.
       --subreddit <subreddit>

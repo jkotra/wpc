@@ -133,8 +133,10 @@ pub struct WPCSettings {
     pub trigger_config: TriggerConfig,
 
     /* plugin flags */
-    #[arg(short = 'w', help = "wallhaven.cc plugin.", default_value_t = false)]
+    #[arg(short = 'w', long, help = "wallhaven.cc plugin.")]
     pub wallhaven: bool,
+    #[arg(long = "wallhaven-config", help = "wallhaven config file")]
+    pub wallhaven_config_file: Option<PathBuf>,
     #[arg(long, short = 'r', help = "reddit plugin.", default_value_t = false)]
     pub reddit: bool,
     #[command(flatten)]

@@ -49,9 +49,9 @@ impl WallHaven {
         return coll_urls;
     }
 
-    pub fn init(&mut self, savepath: PathBuf) {
-        // check if file wallhaven.json exists in CWD.
-        if !savepath.exists() {
+    pub fn init(&mut self, config_file: Option<PathBuf>) {
+        let config_file = config_file.unwrap_or(PathBuf::from("wallhaven.json"));
+        if !config_file.exists() {
             // ask user for username and coll_id
             let mut wh_username = String::new();
             let mut wh_coll_id = String::new();
@@ -68,14 +68,14 @@ impl WallHaven {
             self.coll_id = wh_coll_id.trim().to_string();
             self.api_key = wh_api_key.trim().to_string();
 
-            let mut writer = std::io::BufWriter::new(std::fs::File::create(savepath).unwrap());
+            let mut writer = std::io::BufWriter::new(std::fs::File::create(config_file).unwrap());
             match serde_json::to_writer_pretty(&mut writer, self) {
                 Ok(j) => j,
-                Err(err) => panic!("error wring wallhaven.json: {}", err),
+                Err(err) => panic!("error writing config file: {}", err),
             }
         } else {
             //read from json file
-            self.read_json(savepath.to_str().unwrap())
+            self.read_json(config_file.to_str().unwrap())
         }
     }
 

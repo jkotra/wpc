@@ -49,15 +49,7 @@ async fn main() {
     };
 
     if app_settings.wallhaven {
-        info!("loading wallhaven...");
-        let wallhaven_json_file =
-            std::path::PathBuf::from(app_settings.directory.clone()).join("wallhaven.json");
-        debug!(
-            "wallhaven_json_file = {:?} | exists = {}",
-            wallhaven_json_file,
-            wallhaven_json_file.exists()
-        );
-        wallhaven_cc.init(wallhaven_json_file);
+        wallhaven_cc.init(app_settings.wallhaven_config_file);
     }
 
     /* setup reddit */
