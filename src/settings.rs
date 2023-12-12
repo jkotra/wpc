@@ -162,7 +162,7 @@ pub struct WPCSettings {
 
 pub fn parse() -> WPCSettings {
     let mut cli = WPCSettings::parse();
-    if !cli.wallhaven && !cli.reddit {
+    if !cli.wallhaven && !cli.reddit && !cli.dynamic {
         cli.local = true;
     } else {
         cli.local = false;
