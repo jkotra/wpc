@@ -34,3 +34,5 @@ gio = "0.15.10"
 
 [profile.release]
 lto = true
+opt-level = "z"
+strip = true
