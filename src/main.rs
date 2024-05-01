@@ -59,8 +59,6 @@ async fn main() {
     if app_settings.reddit {
         reddit_com.subreddit = app_settings.reddit_options.reddit;
         reddit_com.n = app_settings.reddit_options.reddit_n;
-        reddit_com.min_height = app_settings.reddit_options.reddit_min_height;
-        reddit_com.min_width = app_settings.reddit_options.reddit_min_width;
         reddit_com.cat = app_settings.reddit_options.reddit_sort;
     }
 
@@ -146,6 +144,17 @@ async fn main() {
             }
 
             time_since = std::time::Instant::now();
+
+            if app_settings.min_height.is_some() || app_settings.min_width.is_some() {
+                candidates = candidates
+                    .clone()
+                    .into_iter()
+                    .filter(|p| {
+                        misc::is_image_min_dim(p, app_settings.min_height, app_settings.min_width)
+                    })
+                    .collect();
+            }
+
             info!("updated candidates = {}", candidates.len());
             do_initial_update = false;
 

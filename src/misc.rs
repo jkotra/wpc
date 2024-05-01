@@ -201,6 +201,25 @@ pub fn maxage_filter(file_list: Vec<String>, maxage: i64) -> Vec<String> {
     return filtered;
 }
 
+pub fn is_image_min_dim(file_path: &str, height: Option<u32>, width: Option<u32>) -> bool {
+    let img = image::open(file_path).unwrap();
+    let (i_width, i_height) = image::GenericImageView::dimensions(&img);
+
+    if height.is_some() {
+        if i_height < height.unwrap() {
+            return false;
+        }
+    }
+
+    if width.is_some() {
+        if i_width < width.unwrap() {
+            return false;
+        }
+    }
+
+    return true;
+}
+
 pub fn is_linux_gnome_de() -> bool {
     let res = std::env::var("DESKTOP_SESSION").unwrap().to_string();
     debug!("DESKTOP_SESSION = {}", res);

@@ -2,8 +2,6 @@ use std::path::PathBuf;
 
 use crate::misc;
 use clap::ValueEnum;
-use image;
-use image::GenericImageView;
 use log::debug;
 use reqwest;
 use serde_json;
@@ -68,9 +66,6 @@ pub struct Reddit {
     pub subreddit: String,
     pub cat: RedditSort,
     pub n: i64,
-
-    pub min_height: u32,
-    pub min_width: u32,
 }
 
 impl Reddit {
@@ -80,22 +75,7 @@ impl Reddit {
         let files = misc::download_wallpapers(urls, savepath).await;
         let files = misc::maxage_filter(files, maxage);
 
-        let mut processed_files = vec![];
-
-        if self.min_height > 0 && self.min_width > 0 {
-            for i in 0..files.len() {
-                let img = image::open(&files[i]).unwrap();
-                let (width, height) = img.dimensions();
-
-                if (width >= self.min_width) || (height >= self.min_height) {
-                    processed_files.push(String::from(&files[i]));
-                } else {
-                }
-            }
-        } else {
-            // user did not chose to filter w, h
-            processed_files = files.clone();
-        }
+        let processed_files = files.clone();
 
         debug!("files from reddit = {:?}", processed_files);
         return processed_files;

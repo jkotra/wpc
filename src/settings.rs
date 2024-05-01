@@ -26,20 +26,6 @@ pub struct RedditOptions {
         default_value_t = RedditSort::Hot,
     )]
     pub reddit_sort: RedditSort,
-    #[arg(
-        long,
-        name = "reddit-min-height",
-        required = false,
-        default_value_t = 1920
-    )]
-    pub reddit_min_height: u32,
-    #[arg(
-        long,
-        name = "reddit-min-width",
-        required = false,
-        default_value_t = 1080
-    )]
-    pub reddit_min_width: u32,
 }
 
 #[derive(Debug, Args, Default, Copy, Clone)]
@@ -124,6 +110,12 @@ pub struct WPCSettings {
         default_value_t = false
     )]
     pub background: bool,
+
+    #[arg(long, help = "minimum width of a wallpaper.")]
+    pub min_width: Option<u32>,
+
+    #[arg(long, help = "minimum height of a wallpaper.")]
+    pub min_height: Option<u32>,
 
     #[command(flatten)]
     pub theme_options: ThemeOptions,
