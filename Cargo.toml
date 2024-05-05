@@ -1,6 +1,6 @@
 [package]
 name = "wpc"
-version = "1.9.2"
+version = "1.9.3"
 description = "WPC is a wallpaper changer for Microsoft Windows and Linux."
 authors = ["Jagadeesh Kotra <jagadeesh@stdin.top>"]
 edition = "2021"
