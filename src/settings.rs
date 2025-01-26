@@ -94,7 +94,7 @@ pub struct WPCSettings {
     /* global application flags */
     #[arg(
         long,
-        short = 's',
+        short = 'S',
         visible_short_alias = 'S',
         required = false,
         help = "add WPC to startup.",

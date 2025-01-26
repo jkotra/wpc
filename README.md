@@ -26,12 +26,16 @@ Options:
           interval between each refresh from configures sources. [default: 3600] [aliases: update] [short aliases: u]
       --maxage <MAXAGE>
           maximum age of wallpaper. [default: -1]
-  -s, --startup
-          add WPC to startup. [short aliases: S]
+  -S, --startup
+          add WPC to startup. creates systemd unit in /home/$USER/.config/systemd [short aliases: S]
       --rm-startup
           remove WPC from startup.
   -b, --background
           run WPC as background process.
+      --min-width <MIN_WIDTH>
+          minimum width of a wallpaper.
+      --min-height <MIN_HEIGHT>
+          minimum height of a wallpaper.
       --set-theme
           
       --grayscale
@@ -58,10 +62,6 @@ Options:
           [default: 6]
       --reddit-sort <reddit-sort>
           [default: hot] [possible values: hot, popular, new, top, rising]
-      --reddit-min-height <reddit-min-height>
-          [default: 1920]
-      --reddit-min-width <reddit-min-width>
-          [default: 1080]
   -l, --local
           Include only local files.
       --dynamic <DYNAMIC_CONFIG_FILE>

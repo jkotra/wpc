@@ -32,3 +32,9 @@
 * [**FIX**] possible crash on `wallhaven` use in debug build. caused due to `reqwest` blocking API which has now been replaced with default async.
 * [**DEPRECATED**] `--rm-grayscale` - grayscale images are now stored in `tmp` and converted on every change.
 * [**DEPRECATED**] `--bing` - unreliable API. use other alternatives.
+
+# version = "1.9.4"
+
+---
+
+* [**FIX**] fix startup flag `-S`.

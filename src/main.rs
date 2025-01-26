@@ -24,7 +24,7 @@ async fn main() {
 
     let mut app_settings = settings::parse();
 
-    if cfg!(linux) {
+    if cfg!(target_os = "linux") {
         if !misc::is_linux_gnome_de() {
             panic!("DE not supported!");
         }
