@@ -7,7 +7,7 @@ use strum_macros::Display;
 
 use crate::misc::{load_trigger_config, secs_till_next_hour};
 
-#[derive(Default, Debug, Args)]
+#[derive(Default, Debug, Clone, Args)]
 pub struct RedditOptions {
     #[arg(
         name = "subreddit",
@@ -44,7 +44,7 @@ pub struct ThemeOptions {
     pub theme_light_only: bool,
 }
 
-#[derive(Debug, Deserialize, Display)]
+#[derive(Debug, Deserialize, Clone, Display)]
 pub enum TriggerArg {
     Grayscale,
     Brightness,
@@ -52,7 +52,7 @@ pub enum TriggerArg {
     ThemeLightOnly,
 }
 
-#[derive(Debug, Default, Deserialize)]
+#[derive(Debug, Default, Clone, Deserialize)]
 pub struct TriggerConfig {
     pub enabled: bool,
     pub bin: String,
@@ -60,7 +60,7 @@ pub struct TriggerConfig {
     pub args: Vec<TriggerArg>,
 }
 
-#[derive(Debug, Parser)]
+#[derive(Debug, Clone, Parser)]
 #[command(author, version, long_about)]
 pub struct WPCSettings {
     #[arg(long, short = 'd', help = "save / source directory.")]
@@ -158,6 +158,11 @@ pub fn parse() -> WPCSettings {
         cli.local = true;
     } else {
         cli.local = false;
+    }
+
+    if cli.wallhaven_config_file.is_none() {
+        // set current directory as path.
+        cli.wallhaven_config_file = Some(PathBuf::from("wallhaven.json"));
     }
 
     cli.directory = cli.directory.canonicalize().unwrap();
