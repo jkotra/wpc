@@ -412,7 +412,8 @@ mod misc_tests {
     );
 
         let files =
-            super::download_wallpapers(url, &std::path::PathBuf::from("./target/debug")).await;
+            super::download_wallpapers(url, &std::path::PathBuf::from("/workspace/target/debug"))
+                .await;
         assert_eq!(files.len(), 1 as usize);
 
         let test_file_path = std::path::PathBuf::from(&files[0]);
