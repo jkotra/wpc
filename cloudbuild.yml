@@ -1,32 +1,15 @@
 steps:
   # Install Rust using rustup
   - name: "rust:latest"
-    id: "Install Rust"
+    id: "Install & Update Rust"
     entrypoint: "sh"
     args:
       - "-c"
       - |
         rustup update
+        apt update && apt install -y python3 python3-pip python-is-python3
         rustc --version
         cargo --version
-
-  # Cache dependencies
-  - name: "rust:latest"
-    id: "Cache Dependencies"
-    entrypoint: "sh"
-    args:
-      - "-c"
-      - |
-        cargo fetch
-
-  # Build the project
-  - name: "rust:latest"
-    id: "Build"
-    entrypoint: "sh"
-    args:
-      - "-c"
-      - |
-        cargo build --release
 
   # Run tests
   - name: "rust:latest"
