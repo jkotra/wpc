@@ -109,6 +109,9 @@ mod wallhaven {
 
     #[tokio::test]
     async fn wh_wallpaper() {
+        if std::env::var("GCP_CLOUD_BUILD").is_ok() {
+            return;
+        };
         let wp_info = super::wallhaven_api::wallhaven_wallpaperinfo("", "q6jvjl")
             .await
             .unwrap();
@@ -120,6 +123,9 @@ mod wallhaven {
     }
     #[tokio::test]
     async fn wh_getcoll() {
+        if std::env::var("GCP_CLOUD_BUILD").is_ok() {
+            return;
+        };
         let wh_coll = super::wallhaven_api::wallhaven_getcoll_api("th4n0s", "803855", "").await;
         assert_eq!(wh_coll.is_err(), false);
     }

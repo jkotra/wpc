@@ -476,7 +476,7 @@ mod misc_tests {
 
     #[test]
     fn trigger_on_wallpaper_change() {
-        let python_bin = match get_python_bin() {
+        let mut python_bin = match get_python_bin() {
             #[cfg(target_os = "linux")]
             Ok(out) => String::from_utf8_lossy(&out.stdout).trim_end().to_string(),
             #[cfg(target_os = "windows")]
@@ -488,6 +488,10 @@ mod misc_tests {
                 .to_string(),
             Err(why) => panic!("Unable to get python path: {:?}", why),
         };
+
+        if std::env::var("GCP_CLOUD_BUILD").is_ok() {
+            python_bin = "/usr/bin/python3".to_string();
+        }
 
         let mut python_test_trigger = String::from("import sys");
         python_test_trigger += "\nwith open('tests//output.txt', 'w+') as f:\n";
