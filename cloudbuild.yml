@@ -13,7 +13,7 @@ steps:
 
   # Run tests
   - name: "rust:latest"
-    id: "Test"
+    id: "run tests"
     entrypoint: "sh"
     args:
       - "-c"

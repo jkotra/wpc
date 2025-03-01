@@ -107,6 +107,7 @@ pub async fn wallhaven_getcoll_api(
         apik = api_key
     );
     let resp = reqwest::get(&url).await?.text().await?;
+    println!("resp = {:?}", resp);
     let v: Value = serde_json::from_str(&resp).expect("Cannot Decode JSON Data!");
 
     Ok(v)
