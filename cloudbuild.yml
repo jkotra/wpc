@@ -38,3 +38,9 @@ steps:
         cargo test --release --verbose
 
 timeout: "1200s"  # Set timeout (20 minutes)
+
+# Specify the Rust version (optional)
+options:
+  env:
+    - 'RUSTUP_TOOLCHAIN=stable'
+  logging: CLOUD_LOGGING_ONLY
