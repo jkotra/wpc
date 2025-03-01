@@ -37,3 +37,4 @@ timeout: '1200s'
 options:
   env:
     - 'RUSTUP_TOOLCHAIN=stable'
+  logging: CLOUD_LOGGING_ONLY
