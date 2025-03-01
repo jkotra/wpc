@@ -19,7 +19,7 @@ steps:
       - "-c"
       - |
         cd /workspace
-        cargo test --verbose --target-dir=/workspace/target
+        cargo test --verbose --target-dir=/workspace/target -- --nocapture
 
 timeout: "1200s"  # Set timeout (20 minutes)
 

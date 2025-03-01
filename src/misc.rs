@@ -493,7 +493,7 @@ mod misc_tests {
         python_test_trigger += "\nwith open('tests//output.txt', 'w+') as f:\n";
         python_test_trigger += "\tf.write(f'OK {sys.argv[1]}')";
 
-        match std::fs::write("tests/trigger.py", python_test_trigger) {
+        match std::fs::write("./tests/trigger.py", python_test_trigger) {
             Ok(_) => (),
             Err(why) => panic!("Unable to write test file: {:?}", why),
         }
@@ -503,7 +503,7 @@ mod misc_tests {
         let tc = TriggerConfig {
             enabled: true,
             bin: python_bin,
-            file: std::fs::canonicalize("tests/trigger.py")
+            file: std::fs::canonicalize("./tests/trigger.py")
                 .unwrap()
                 .to_string_lossy()
                 .to_string(),
@@ -512,11 +512,11 @@ mod misc_tests {
         let to = ThemeOptions {
             ..Default::default()
         };
-        let wallpaper = std::path::PathBuf::from("tests/1.jpg");
+        let wallpaper = std::path::PathBuf::from("./tests/1.jpg");
 
         run_trigger(wallpaper, &to, &tc);
 
-        match std::fs::read("tests/output.txt") {
+        match std::fs::read("./tests/output.txt") {
             Ok(fc) => {
                 let content = String::from_utf8_lossy(&fc).to_string();
                 assert_eq!(content, "OK 0");
