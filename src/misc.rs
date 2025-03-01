@@ -502,7 +502,7 @@ mod misc_tests {
 
         let tc = TriggerConfig {
             enabled: true,
-            bin: python_bin,
+            bin: "/usr/bin/python".to_string(),
             file: std::fs::canonicalize("./tests/trigger.py")
                 .unwrap()
                 .to_string_lossy()
