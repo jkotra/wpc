@@ -1,25 +1,30 @@
 steps:
-  # Install Rust using rustup
-  - name: "rust:latest"
-    id: "Install & Update Rust"
+  # Use Debian as the base image
+  - name: "debian:latest"
+    id: "Install Rust & Python"
     entrypoint: "sh"
     args:
       - "-c"
       - |
+        apt update && apt install -y curl python3 python3-pip python3-venv
+        ln -sf /usr/bin/python3 /usr/bin/python
+        curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+        export PATH="$HOME/.cargo/bin:$PATH"
         rustup update
-        apt update && apt install -y python3 python3-pip python-is-python3
         rustc --version
         cargo --version
+        which python
 
   # Run tests
-  - name: "rust:latest"
-    id: "run tests"
+  - name: "debian:latest"
+    id: "Run Tests"
     entrypoint: "sh"
     env:
       - "GCP_CLOUD_BUILD=1"
     args:
       - "-c"
       - |
+        export PATH="$HOME/.cargo/bin:$PATH"
         cd /workspace
         cargo test --verbose --target-dir=/workspace/target -- --nocapture
 
