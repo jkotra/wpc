@@ -1,0 +1,33 @@
+steps:
+  # Install Rust using rustup
+  - name: "rust:latest"
+    id: "Install & Update Rust"
+    entrypoint: "sh"
+    args:
+      - "-c"
+      - |
+        rustup update
+        apt update && apt install -y python3 python3-pip
+        which python3
+        rustc --version
+        cargo --version
+
+  # Run tests
+  - name: "rust:latest"
+    id: "run tests"
+    entrypoint: "sh"
+    env:
+      - "GCP_CLOUD_BUILD=1"
+    args:
+      - "-c"
+      - |
+        cd /workspace
+        cargo test --verbose --target-dir=/workspace/target -- --nocapture
+
+timeout: "1200s"  # Set timeout (20 minutes)
+
+# Specify the Rust version (optional)
+options:
+  env:
+    - 'RUSTUP_TOOLCHAIN=stable'
+  logging: CLOUD_LOGGING_ONLY
