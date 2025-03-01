@@ -9,6 +9,8 @@ steps:
         rustup update
         apt update && apt install -y python3 python3-pip
         ln -sf /usr/bin/python3 /usr/bin/python
+        which python
+        which python3
         rustc --version
         cargo --version
 
