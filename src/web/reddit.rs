@@ -118,6 +118,10 @@ mod reddit {
 
     #[tokio::test]
     async fn reddit_test_get_image_urls_from_subreddit() {
+        match std::env::var("GCP_CLOUD_BUILD") {
+            Ok(_) => return,
+            Err(_) => (),
+        };
         let urls = super::get_pictures_from_subreddit("art", 5, RedditSort::Hot).await;
         assert_eq!(urls.len(), 5);
     }

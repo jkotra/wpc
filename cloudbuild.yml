@@ -15,6 +15,8 @@ steps:
   - name: "rust:latest"
     id: "run tests"
     entrypoint: "sh"
+    env:
+      - "GCP_CLOUD_BUILD=1"
     args:
       - "-c"
       - |

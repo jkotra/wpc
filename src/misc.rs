@@ -509,6 +509,7 @@ mod misc_tests {
                 .to_string(),
             args: vec![TriggerArg::Brightness],
         };
+        println!("trigger = {:?}", tc);
         let to = ThemeOptions {
             ..Default::default()
         };
