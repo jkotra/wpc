@@ -1,6 +1,6 @@
 [package]
 name = "wpc"
-version = "1.9.4"
+version = "1.9.5"
 description = "WPC is a wallpaper changer for Microsoft Windows and Linux."
 authors = ["Jagadeesh Kotra <jagadeesh@stdin.top>"]
 edition = "2021"
@@ -24,6 +24,7 @@ image = "0.23.12"
 notify = "4.0.17"
 strum_macros = "0.24.3"
 tokio = { version = "1.8.4", features = ["full"] }
+async-trait = "0.1"
 
 [target.'cfg(windows)'.dependencies]
 winapi = { version = "0.3", features = ["winuser"] }

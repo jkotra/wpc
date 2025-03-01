@@ -1,3 +1,4 @@
+use core::panic;
 use std::path::PathBuf;
 use std::sync::mpsc::channel;
 
@@ -12,8 +13,7 @@ mod changer;
 use changer::change_wallpaper;
 
 mod web;
-use web::reddit::Reddit;
-use web::wallhaven::WallHaven;
+use web::{reddit::Reddit, wallhaven::WallHaven, WPCPlugin};
 
 mod settings;
 use settings::{ThemeOptions, TriggerConfig};
@@ -23,6 +23,34 @@ async fn main() {
     env_logger::init();
 
     let mut app_settings = settings::parse();
+    let mut plugins: Vec<Box<dyn WPCPlugin>> = vec![];
+
+    if app_settings.wallhaven {
+        let plugin: Box<dyn WPCPlugin> = Box::new(WallHaven {
+            ..Default::default()
+        });
+        plugins.push(plugin);
+    }
+
+    if app_settings.reddit {
+        let plugin = Box::new(Reddit {
+            ..Default::default()
+        });
+        plugins.push(plugin);
+    }
+
+    for plugin in &mut plugins {
+        let details = plugin.details();
+        let _init_status = match details.name.as_str() {
+            "WallHaven" => {
+                plugin
+                    .init(app_settings.wallhaven_config_file.clone())
+                    .await
+            }
+            "Reddit" => plugin.init_from_settings(app_settings.clone()).await,
+            _ => panic!("unsupported plugin! {:?}", details),
+        };
+    }
 
     if cfg!(target_os = "linux") {
         if !misc::is_linux_gnome_de() {
@@ -41,25 +69,6 @@ async fn main() {
     if app_settings.background {
         misc::run_in_background();
         std::process::exit(0);
-    }
-
-    /* setup wallhaven */
-    let mut wallhaven_cc = WallHaven {
-        ..Default::default()
-    };
-
-    if app_settings.wallhaven {
-        wallhaven_cc.init(app_settings.wallhaven_config_file);
-    }
-
-    /* setup reddit */
-    let mut reddit_com = Reddit {
-        ..Default::default()
-    };
-    if app_settings.reddit {
-        reddit_com.subreddit = app_settings.reddit_options.reddit;
-        reddit_com.n = app_settings.reddit_options.reddit_n;
-        reddit_com.cat = app_settings.reddit_options.reddit_sort;
     }
 
     let mut time_since = std::time::Instant::now();
@@ -129,15 +138,8 @@ async fn main() {
                 candidates.append(&mut files);
             }
 
-            if app_settings.wallhaven {
-                let mut files = wallhaven_cc
-                    .update(&app_settings.directory, app_settings.maxage)
-                    .await;
-                candidates.append(&mut files);
-            }
-
-            if app_settings.reddit {
-                let mut files = reddit_com
+            for plugin in &mut plugins {
+                let mut files = plugin
                     .update(&app_settings.directory, app_settings.maxage)
                     .await;
                 candidates.append(&mut files);

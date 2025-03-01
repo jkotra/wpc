@@ -1,92 +1,106 @@
 use crate::misc;
+use crate::settings::WPCSettings;
+use async_trait::async_trait;
 use serde::Deserialize;
 use serde::Serialize;
+use std::error::Error;
 use std::path::PathBuf;
 
-// JSON read/write
 use serde_json;
 
 use log::debug;
 
+use super::PluginDetails;
+use super::WPCPlugin;
+
 #[path = "wallhaven_api.rs"]
 mod wallhaven_api;
+
+fn init_wizard(config_file_path: PathBuf) -> WallHaven {
+    let mut wh_username = String::new();
+    let mut wh_collection_id = String::new();
+    let mut wh_api_key = String::new();
+
+    println!("👤 Username:");
+    std::io::stdin().read_line(&mut wh_username).unwrap();
+    println!("📟 Collection ID:");
+    std::io::stdin().read_line(&mut wh_collection_id).unwrap();
+    println!("🔑 API key\n(not required for public collection, just press ENTER)\n(Get API key from https://wallhaven.cc/settings/account):");
+    std::io::stdin().read_line(&mut wh_api_key).unwrap();
+
+    let data = WallHaven {
+        username: wh_username,
+        collection_id: wh_collection_id,
+        api_key: wh_api_key,
+    };
+
+    let mut writer = std::io::BufWriter::new(std::fs::File::create(config_file_path).unwrap());
+    match serde_json::to_writer_pretty(&mut writer, &data) {
+        Ok(j) => j,
+        Err(err) => panic!("error writing config file: {}", err),
+    }
+    return data;
+}
 
 #[derive(Default, Debug, Serialize, Deserialize)]
 pub struct WallHaven {
     pub username: String,
-    pub coll_id: String,
+    pub collection_id: String,
     pub api_key: String,
 }
 
-impl WallHaven {
-    pub async fn update(&self, savepath: &PathBuf, maxage: i64) -> Vec<String> {
-        let wallpaper_links = self.get_collection().await;
-        debug!("wallhaven collection links = {:?}", wallpaper_links);
-        let mut files = misc::download_wallpapers(wallpaper_links, &savepath).await;
+#[async_trait]
+impl WPCPlugin for WallHaven {
+    async fn init(&mut self, config_file: Option<PathBuf>) -> Result<(), Box<dyn Error>> {
+        let data = match config_file.clone().unwrap().exists() {
+            true => {
+                let str_data = std::fs::read_to_string(config_file.unwrap()).unwrap();
+                serde_json::from_str(&str_data).unwrap()
+            }
+            false => init_wizard(config_file.unwrap()),
+        };
+        self.username = data.username;
+        self.collection_id = data.collection_id;
+        self.api_key = data.api_key;
+        Ok(())
+    }
+    async fn init_from_settings(&mut self, _settings: WPCSettings) -> Result<(), Box<dyn Error>> {
+        Ok(())
+    }
+    fn details(&self) -> super::PluginDetails {
+        return PluginDetails {
+            name: "WallHaven".to_string(),
+            version: "1.0".to_string(),
+            author: "Jagadeesh Kotra <jagadeesh@stdin.top>".to_string(),
+        };
+    }
+
+    async fn update(&self, savepath: &PathBuf, maxage: i64) -> Vec<String> {
+        let collection: serde_json::value::Value;
+
+        collection = wallhaven_api::wallhaven_getcoll_api(
+            &self.username,
+            &self.collection_id,
+            &self.api_key,
+        )
+        .await
+        .unwrap();
+
+        let mut collection_urls: Vec<String> = vec![];
+
+        if let Some(arr) = collection["data"].as_array() {
+            for link in arr {
+                collection_urls.push(link["path"].as_str().unwrap().to_string())
+            }
+        }
+
+        debug!("wallhaven collection links = {:?}", collection_urls);
+        let mut files = misc::download_wallpapers(collection_urls, &savepath).await;
         if maxage != -1 {
             files = misc::maxage_filter(files.clone(), maxage);
         }
         debug!("files from wallhaven = {:?}", files);
         return files;
-    }
-
-    async fn get_collection(&self) -> Vec<String> {
-        let collection: serde_json::value::Value;
-
-        collection =
-            wallhaven_api::wallhaven_getcoll_api(&self.username, &self.coll_id, &self.api_key)
-                .await
-                .unwrap();
-
-        let mut coll_urls: Vec<String> = vec![];
-
-        if let Some(arr) = collection["data"].as_array() {
-            for link in arr {
-                coll_urls.push(link["path"].as_str().unwrap().to_string())
-            }
-        }
-
-        return coll_urls;
-    }
-
-    pub fn init(&mut self, config_file: Option<PathBuf>) {
-        let config_file = config_file.unwrap_or(PathBuf::from("wallhaven.json"));
-        if !config_file.exists() {
-            // ask user for username and coll_id
-            let mut wh_username = String::new();
-            let mut wh_coll_id = String::new();
-            let mut wh_api_key = String::new();
-
-            println!("👤 Username:");
-            std::io::stdin().read_line(&mut wh_username).unwrap();
-            println!("📟 Collection ID:");
-            std::io::stdin().read_line(&mut wh_coll_id).unwrap();
-            println!("🔑 API key\n(not required for public collection, just press ENTER)\n(Get API key from https://wallhaven.cc/settings/account):");
-            std::io::stdin().read_line(&mut wh_api_key).unwrap();
-
-            self.username = wh_username.trim().to_string();
-            self.coll_id = wh_coll_id.trim().to_string();
-            self.api_key = wh_api_key.trim().to_string();
-
-            let mut writer = std::io::BufWriter::new(std::fs::File::create(config_file).unwrap());
-            match serde_json::to_writer_pretty(&mut writer, self) {
-                Ok(j) => j,
-                Err(err) => panic!("error writing config file: {}", err),
-            }
-        } else {
-            //read from json file
-            self.read_json(config_file.to_str().unwrap())
-        }
-    }
-
-    fn read_json(&mut self, wallhaven_json_path: &str) {
-        let str_data = std::fs::read_to_string(wallhaven_json_path).unwrap();
-
-        let data: WallHaven = serde_json::from_str(&str_data).unwrap();
-
-        self.username = data.username;
-        self.coll_id = data.coll_id;
-        self.api_key = data.api_key;
     }
 }
 

@@ -38,3 +38,9 @@
 ---
 
 * [**FIX**] fix startup flag `-S`.
+
+# version = "1.9.5"
+
+---
+
+* [**FIX**] load and use plugins in a generic way with traits.
