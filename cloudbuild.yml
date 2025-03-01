@@ -35,7 +35,8 @@ steps:
     args:
       - "-c"
       - |
-        cargo test --release --verbose
+        cd /workspace
+        cargo test --release --verbose --target-dir=/workspace/target
 
 timeout: "1200s"  # Set timeout (20 minutes)
 
