@@ -3,25 +3,32 @@ steps:
   - name: 'rustlang/rust:latest'
     id: 'Install Rust'
     entrypoint: 'bash'
-    args: ['-c', 'curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y']
+    args:
+      - '-c'
+      - 'curl --proto =https --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y'
 
   # Step 2: Set up Rust environment
   - name: 'rustlang/rust:latest'
     id: 'Set up Rust environment'
     entrypoint: 'bash'
-    args: ['-c', 'source $HOME/.cargo/env']
+    args:
+      - '-c'
+      - 'source $HOME/.cargo/env'
 
   # Step 3: Build the Rust project
   - name: 'rustlang/rust:latest'
     id: 'Build Rust project'
     entrypoint: 'cargo'
-    args: ['build', '--release']
+    args:
+      - 'build'
+      - '--release'
 
   # Step 4: Run tests
   - name: 'rustlang/rust:latest'
     id: 'Run tests'
     entrypoint: 'cargo'
-    args: ['test']
+    args:
+      - 'test'
 
 # Timeout for the build (optional)
 timeout: '1200s'
