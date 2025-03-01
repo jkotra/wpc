@@ -9,7 +9,8 @@ steps:
         apt update && apt install -y curl python3 python3-pip python3-venv
         ln -sf /usr/bin/python3 /usr/bin/python
         curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-        export PATH="$HOME/.cargo/bin:$PATH"
+        echo 'export PATH="$HOME/.cargo/bin:$PATH"' >> ~/.profile
+        source ~/.profile
         rustup update
         rustc --version
         cargo --version
@@ -24,7 +25,7 @@ steps:
     args:
       - "-c"
       - |
-        export PATH="$HOME/.cargo/bin:$PATH"
+        source ~/.profile
         cd /workspace
         cargo test --verbose --target-dir=/workspace/target -- --nocapture
 
