@@ -1,40 +1,40 @@
 steps:
-  # Step 1: Install Rust
-  - name: 'rustlang/rust:latest'
-    id: 'Install Rust'
-    entrypoint: 'bash'
+  # Install Rust using rustup
+  - name: "rust:latest"
+    id: "Install Rust"
+    entrypoint: "sh"
     args:
-      - '-c'
-      - 'curl --proto =https --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y'
+      - "-c"
+      - |
+        rustup update
+        rustc --version
+        cargo --version
 
-  # Step 2: Set up Rust environment
-  - name: 'rustlang/rust:latest'
-    id: 'Set up Rust environment'
-    entrypoint: 'bash'
+  # Cache dependencies
+  - name: "rust:latest"
+    id: "Cache Dependencies"
+    entrypoint: "sh"
     args:
-      - '-c'
-      - 'source $HOME/.cargo/env'
+      - "-c"
+      - |
+        cargo fetch
 
-  # Step 3: Build the Rust project
-  - name: 'rustlang/rust:latest'
-    id: 'Build Rust project'
-    entrypoint: 'cargo'
+  # Build the project
+  - name: "rust:latest"
+    id: "Build"
+    entrypoint: "sh"
     args:
-      - 'build'
-      - '--release'
+      - "-c"
+      - |
+        cargo build --release
 
-  # Step 4: Run tests
-  - name: 'rustlang/rust:latest'
-    id: 'Run tests'
-    entrypoint: 'cargo'
+  # Run tests
+  - name: "rust:latest"
+    id: "Test"
+    entrypoint: "sh"
     args:
-      - 'test'
+      - "-c"
+      - |
+        cargo test --release --verbose
 
-# Timeout for the build (optional)
-timeout: '1200s'
-
-# Specify the Rust version (optional)
-options:
-  env:
-    - 'RUSTUP_TOOLCHAIN=stable'
-  logging: CLOUD_LOGGING_ONLY
+timeout: "1200s"  # Set timeout (20 minutes)
