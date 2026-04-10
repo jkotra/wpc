@@ -56,13 +56,16 @@ pub fn add_to_startup_gnome() -> Result<bool, String> {
      [Unit] \
     \nDescription=Wallpaper Changer \
     \nRequires=graphical-session.target \
+    \nAfter=graphical-session.target \
+    \nWants=graphical-session.target \
     \n\n [Service] \
+    \nExecStartPre=/usr/bin/sleep 5 \
     \nEnvironment='RUST_LOG=info' \
     \nExecStart={exe} {args} \
     \nRestart=on-failure \
     \nRestartSec=30 \
     \n\n [Install] \
-    \nWantedBy=default.target
+    \nWantedBy=graphical-session.target
     ",
         exe = curr_exe.to_str().unwrap(),
         args = args
